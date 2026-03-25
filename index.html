@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>مصحف النور</title>
 <link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
 <style>
 :root{
   --bg:#04040a;--bg2:#080810;--bg3:#0d0d1c;--panel:#101020;
@@ -660,7 +661,9 @@ function buildIndex(surahs) {
     });
   });
 
-  fuse = new Fuse(AY, {keys:['clean','cmp'], threshold:.32, distance:120, minMatchCharLength:2, includeScore:true});
+  try {
+    fuse = new Fuse(AY, {keys:['clean','cmp'], threshold:.32, distance:120, minMatchCharLength:2, includeScore:true});
+  } catch(e) { fuse = null; }
   finishInit();
 }
 
