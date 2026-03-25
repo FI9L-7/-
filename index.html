@@ -8,13 +8,14 @@
   ✅ Firebase بـ async — لا يعلّق الصفحة
   ✅ data.js و fuse.js بـ defer — يُحمَّلان في الخلفية
 -->
-<script async src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js" id="fb-app"></script>
-<script async src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js" id="fb-auth"></script>
-<script async src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js" id="fb-db"></script>
+<!-- ✅ كل شيء defer — لا شيء يعلّق الصفحة -->
+<script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script defer src="data.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.css">
-<script src="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 /* ══ VARS ══ */
@@ -913,15 +914,20 @@ function mkHL(orig,cqC){
   return orig.slice(0,os)+'<mark>'+orig.slice(os,oe)+'</mark>'+orig.slice(oe);
 }
 
-/* ══ INIT ══ */
-window.addEventListener('load',()=>{
-  if(typeof quranData==='undefined'){
-    document.getElementById('lsS').textContent='⚠️ خطأ: data.js غير موجود';return;
+/* ══ INIT — يبدأ فور جهوز data.js بدون انتظار Firebase أو Cropper ══ */
+function waitForData(tries) {
+  if (typeof quranData !== 'undefined' && typeof Fuse !== 'undefined') {
+    document.getElementById('lsS').textContent = 'جاري بناء الفهرس...';
+    tryInitFirebase(); // Firebase في الخلفية — لا ينتظره أحد
+    setTimeout(init, 20);
+  } else if (tries < 60) {
+    setTimeout(() => waitForData(tries + 1), 200);
+  } else {
+    document.getElementById('lsS').textContent = '⚠️ خطأ: data.js غير موجود في نفس المجلد';
   }
-  document.getElementById('lsS').textContent='جاري بناء الفهرس...';
-  tryInitFirebase(); // Firebase async
-  setTimeout(init,30);
-});
+}
+// ابدأ المحاولة فور انتهاء HTML
+document.addEventListener('DOMContentLoaded', () => waitForData(0));
 
 function init(){
   for(let i=0;i<604;i++) PM.push([]);
