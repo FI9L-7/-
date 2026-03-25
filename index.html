@@ -12,10 +12,10 @@
 <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-<script defer src="data.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.css">
+<!-- data.js يُحمَّل بـ fetch() بدون تجميد الصفحة -->
 <link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 /* ══ VARS ══ */
@@ -914,20 +914,43 @@ function mkHL(orig,cqC){
   return orig.slice(0,os)+'<mark>'+orig.slice(os,oe)+'</mark>'+orig.slice(oe);
 }
 
-/* ══ INIT — يبدأ فور جهوز data.js بدون انتظار Firebase أو Cropper ══ */
-function waitForData(tries) {
-  if (typeof quranData !== 'undefined' && typeof Fuse !== 'undefined') {
+/* ══════════════════════════════════════════════
+   ✅ الحل الحقيقي للتعليق:
+   fetch() يحمّل data.js كنص في الخلفية (لا يجمّد)
+   JSON.parse أسرع بـ٣x من تحليل JS
+   الصفحة تظهر فوراً والتحميل يحدث خلف الكواليس
+══════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  tryInitFirebase();
+  loadData();
+});
+
+function loadData() {
+  fetch('data.js')
+    .then(r => {
+      if (!r.ok) throw new Error('data.js not found');
+      return r.text();
+    })
+    .then(text => {
+      // استخرج JSON من نص السكريبت: const quranData = {...};
+      const jsonStr = text.replace(/^\s*const\s+quranData\s*=\s*/, '').replace(/;?\s*$/, '');
+      window.quranData = JSON.parse(jsonStr);
+      // انتظر Fuse.js يكون جاهز
+      waitFuse(0);
+    })
+    .catch(e => {
+      document.getElementById('lsS').textContent = '⚠️ data.js غير موجود في نفس المجلد';
+    });
+}
+
+function waitFuse(tries) {
+  if (typeof Fuse !== 'undefined') {
     document.getElementById('lsS').textContent = 'جاري بناء الفهرس...';
-    tryInitFirebase(); // Firebase في الخلفية — لا ينتظره أحد
     setTimeout(init, 20);
-  } else if (tries < 60) {
-    setTimeout(() => waitForData(tries + 1), 200);
-  } else {
-    document.getElementById('lsS').textContent = '⚠️ خطأ: data.js غير موجود في نفس المجلد';
+  } else if (tries < 40) {
+    setTimeout(() => waitFuse(tries + 1), 150);
   }
 }
-// ابدأ المحاولة فور انتهاء HTML
-document.addEventListener('DOMContentLoaded', () => waitForData(0));
 
 function init(){
   for(let i=0;i<604;i++) PM.push([]);
