@@ -235,23 +235,24 @@ body.light .bnav{background:rgba(244,239,230,.97)}
 @media(min-width:641px){.pbanner{border-radius:20px 20px 0 0}}
 .pav-wrap{position:relative;width:80px;height:80px;margin:-40px auto 10px;z-index:2}
 .pav{
-  width:80px;height:80px;border-radius:50%;
+  width:80px;height:80px;
+  border-radius:50%;
   border:3px solid var(--bg2);
   background:var(--bg3);
   display:flex;align-items:center;justify-content:center;
   font-size:2rem;
-  overflow:hidden;           /* ✅ يضمن الصورة داخل الدائرة */
   cursor:pointer;
   transition:border-color .2s;
-  position:relative;         /* ✅ يضمن z-index صحيح */
+  overflow:hidden;
+  clip-path:circle(50%);
+  -webkit-clip-path:circle(50%);
 }
 .pav img{
-  position:absolute;inset:0;
   width:100%;height:100%;
-  object-fit:cover;          /* ✅ يملأ الدائرة بدون تشويه */
+  object-fit:cover;
   object-position:center;
   display:none;
-  border-radius:50%;
+  flex-shrink:0;
 }
 .pav:hover{border-color:var(--acc)}
 .pav-edit{position:absolute;bottom:2px;left:2px;width:22px;height:22px;background:var(--acc);border-radius:50%;border:2px solid var(--bg2);display:flex;align-items:center;justify-content:center;font-size:.58rem;pointer-events:none;z-index:3}
@@ -651,17 +652,33 @@ function updAuthUI(u){
   if(!nm)return;
   if(u){
     const dn=CF.displayName||u.displayName||u.email?.split('@')[0]||'مستخدم';
-    nm.textContent=dn;sb.textContent=CF.username?'@'+CF.username:u.email||'';
+    nm.textContent=dn;
+    sb.innerHTML=CF.username
+      ? `<span style="unicode-bidi:embed;direction:ltr">@${CF.username}</span>`
+      : (u.email||'');
     if(ai&&u.photoURL){ai.src=u.photoURL;ai.style.display='block';av.classList.add('has-img');}
     if(btn)btn.textContent='👤 ملفي';
     // fill modal
     const pdn=document.getElementById('pDN');if(pdn)pdn.textContent=dn;
     const pem=document.getElementById('pEM');if(pem)pem.textContent=u.email||'';
-    const pun=document.getElementById('pUN');if(pun)pun.textContent=CF.username?'@'+CF.username:'لم يُحدَّد يوزر بعد';
+    const pun=document.getElementById('pUN');
+    if(pun){
+      if(CF.username){
+        pun.innerHTML=`<span style="unicode-bidi:embed;direction:ltr">@${CF.username}</span>`;
+      } else {
+        pun.textContent='لم يُحدَّد يوزر بعد';
+      }
+    }
     const pni=document.getElementById('pNI');if(pni)pni.value=CF.displayName||u.displayName||'';
     const pui=document.getElementById('pUI');if(pui)pui.value=CF.username||'';
     const pp=document.getElementById('pPriv');if(pp)pp.value=CF.khatmaPrivacy||'public';
-    const pai=document.getElementById('pavImg');if(pai&&u.photoURL){pai.src=u.photoURL;pai.style.display='block';}
+    const pai=document.getElementById('pavImg');
+    const pae=document.getElementById('pavEmoji');
+    if(pai&&u.photoURL){
+      pai.src=u.photoURL;
+      pai.style.display='block';
+      if(pae) pae.style.display='none';
+    }
     document.getElementById('pNotLog').style.display='none';
     document.getElementById('pLogged').style.display='block';
   }else{
