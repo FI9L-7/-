@@ -11,7 +11,7 @@
   3. init() يبدأ بعد DOMContentLoaded + polling على quranData
   4. Firebase يُهيَّأ بشكل مستقل لا يؤثر على الدخول
 -->
-<script defer src="data.js"></script>
+<script async src="data.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
 <link href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css" rel="stylesheet">
@@ -672,12 +672,23 @@ function updAuthUI(u){
     const pni=document.getElementById('pNI');if(pni)pni.value=CF.displayName||u.displayName||'';
     const pui=document.getElementById('pUI');if(pui)pui.value=CF.username||'';
     const pp=document.getElementById('pPriv');if(pp)pp.value=CF.khatmaPrivacy||'public';
+    const savedAv = localStorage.getItem('qAv');
     const pai=document.getElementById('pavImg');
     const pae=document.getElementById('pavEmoji');
-    if(pai&&u.photoURL){
-      pai.src=u.photoURL;
-      pai.style.display='block';
-      if(pae) pae.style.display='none';
+    if(savedAv){
+      // الصورة المقصوصة لها أولوية على صورة Google
+      if(pai){pai.src=savedAv;pai.style.display='block';}
+      if(pae)pae.style.display='none';
+      const aai=document.getElementById('aAvImg');
+      if(aai){aai.src=savedAv;aai.style.display='block';}
+      document.getElementById('aAv').classList.add('has-img');
+    } else if(u.photoURL){
+      // استخدم صورة Google فقط لو ما فيه صورة مقصوصة
+      if(pai){pai.src=u.photoURL;pai.style.display='block';}
+      if(pae)pae.style.display='none';
+      const aai=document.getElementById('aAvImg');
+      if(aai){aai.src=u.photoURL;aai.style.display='block';}
+      document.getElementById('aAv').classList.add('has-img');
     }
     document.getElementById('pNotLog').style.display='none';
     document.getElementById('pLogged').style.display='block';
@@ -836,11 +847,17 @@ window.confirmCrop=()=>{
 };
 window.cancelCrop=()=>{if(cropInst){cropInst.destroy();cropInst=null;}document.getElementById('covl').classList.remove('op');};
 function loadAv(){
-  const s=localStorage.getItem('qAv');if(!s)return;
-  const ai=document.getElementById('aAvImg');if(ai){ai.src=s;ai.style.display='block';}
-  const pi=document.getElementById('pavImg');if(pi){pi.src=s;pi.style.display='block';}
-  const pe=document.getElementById('pavEmoji');if(pe)pe.style.display='none';
-  document.getElementById('aAv').classList.add('has-img');
+  const s=localStorage.getItem('qAv');
+  if(!s) return;
+  // auth bar
+  const aai=document.getElementById('aAvImg');
+  if(aai){aai.src=s;aai.style.display='block';}
+  document.getElementById('aAv')?.classList.add('has-img');
+  // profile modal
+  const pi=document.getElementById('pavImg');
+  if(pi){pi.src=s;pi.style.display='block';}
+  const pe=document.getElementById('pavEmoji');
+  if(pe) pe.style.display='none';
 }
 
 /* ══ TEXT UTILS ══ */
