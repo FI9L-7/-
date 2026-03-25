@@ -616,7 +616,18 @@ async function loadQuran() {
   // حمّل من API
   document.getElementById('lsS').textContent = 'جاري تحميل القرآن...';
   try {
-    const res = await fetch(`${API}/quran/quran-uthmani`);
+   const APIs = [
+  'https://api.alquran.cloud/v1',
+  'https://alquran.cloud/api/v1',
+];
+let res, lastErr;
+for(const base of APIs){
+  try{
+    res = await fetch(`${base}/quran/quran-uthmani`);
+    if(res.ok) break;
+  }catch(e){ lastErr=e; }
+}
+if(!res?.ok) throw lastErr||new Error('failed');
     if (!res.ok) throw new Error('API error');
     const json = await res.json();
     const data = json.data.surahs;
