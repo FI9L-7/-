@@ -231,13 +231,30 @@ body.light .bnav{background:rgba(244,239,230,.97)}
 .hint{font-size:.68rem;color:var(--txt3);margin-top:4px;display:block}
 
 /* PROFILE */
-.pbanner{height:80px;background:linear-gradient(135deg,var(--acc3),var(--acc));border-radius:24px 24px 0 0}
+.pbanner{height:90px;background:linear-gradient(135deg,var(--acc3),var(--acc));border-radius:24px 24px 0 0}
 @media(min-width:641px){.pbanner{border-radius:20px 20px 0 0}}
-.pav-wrap{position:relative;width:72px;height:72px;margin:-36px auto 8px;z-index:1}
-.pav{width:72px;height:72px;border-radius:50%;border:3px solid var(--bg2);background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:1.8rem;overflow:hidden;cursor:pointer;transition:border-color .2s}
-.pav img{width:100%;height:100%;object-fit:cover;display:none}
+.pav-wrap{position:relative;width:80px;height:80px;margin:-40px auto 10px;z-index:2}
+.pav{
+  width:80px;height:80px;border-radius:50%;
+  border:3px solid var(--bg2);
+  background:var(--bg3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:2rem;
+  overflow:hidden;           /* ✅ يضمن الصورة داخل الدائرة */
+  cursor:pointer;
+  transition:border-color .2s;
+  position:relative;         /* ✅ يضمن z-index صحيح */
+}
+.pav img{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  object-fit:cover;          /* ✅ يملأ الدائرة بدون تشويه */
+  object-position:center;
+  display:none;
+  border-radius:50%;
+}
 .pav:hover{border-color:var(--acc)}
-.pav-edit{position:absolute;bottom:0;left:0;width:22px;height:22px;background:var(--acc);border-radius:50%;border:2px solid var(--bg2);display:flex;align-items:center;justify-content:center;font-size:.6rem;pointer-events:none}
+.pav-edit{position:absolute;bottom:2px;left:2px;width:22px;height:22px;background:var(--acc);border-radius:50%;border:2px solid var(--bg2);display:flex;align-items:center;justify-content:center;font-size:.58rem;pointer-events:none;z-index:3}
 #avFile{display:none}
 .pfr{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
 .btn-g{flex:1;padding:10px;background:linear-gradient(135deg,var(--acc3),var(--acc));border:none;border-radius:12px;color:#000;font-family:'Cairo',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;transition:all .2s;min-width:60px}
@@ -346,7 +363,10 @@ footer{text-align:center;padding:26px 16px 10px;border-top:1px solid var(--brd);
   <div class="mbox">
     <div class="pbanner"></div>
     <div class="pav-wrap">
-      <div class="pav" id="pav" onclick="document.getElementById('avFile').click()">👤<img id="pavImg" src="" alt=""></div>
+      <div class="pav" id="pav" onclick="document.getElementById('avFile').click()">
+        <span id="pavEmoji" style="position:relative;z-index:1;pointer-events:none">👤</span>
+        <img id="pavImg" src="" alt="">
+      </div>
       <div class="pav-edit">✏️</div>
       <input type="file" id="avFile" accept="image/*">
     </div>
@@ -360,7 +380,7 @@ footer{text-align:center;padding:26px 16px 10px;border-top:1px solid var(--brd);
         <div style="text-align:center;margin-bottom:14px">
           <div style="font-size:1.05rem;font-weight:700;color:var(--txt)" id="pDN">—</div>
           <div style="font-size:.72rem;color:var(--txt3)" id="pEM">—</div>
-          <div style="font-size:.72rem;color:var(--acc);margin-top:2px" id="pUN">—</div>
+          <div style="font-size:.72rem;color:var(--acc);margin-top:2px;direction:ltr;font-family:monospace;letter-spacing:.04em" id="pUN">—</div>
         </div>
         <div class="mfield"><label>الاسم المعروض</label><input type="text" id="pNI"></div>
         <div class="mfield">
@@ -520,7 +540,7 @@ footer{text-align:center;padding:26px 16px 10px;border-top:1px solid var(--brd);
     <div class="fln"></div>
     <div class="ftx">
       صُنع بـ ❤️ بواسطة <strong style="color:var(--acc)">فيصل</strong><br>
-      <a href="mailto:faisallll13579@gmail.com">faisallll13579@gmail.com</a><br>
+      <a href="/cdn-cgi/l/email-protection#eb8d8a82988a87878787dad8dedcd2ab8c868a8287c5888486"><span class="__cf_email__" data-cfemail="e385828a90828f8f8f8fd2d0d6d4daa3848e828a8fcd808c8e">[email&#160;protected]</span></a><br>
       جميع الحقوق محفوظة © ٢٠٢٥
     </div>
   </footer>
@@ -555,7 +575,7 @@ footer{text-align:center;padding:26px 16px 10px;border-top:1px solid var(--brd);
 </div>
 
 <!-- Firebase (آخر شيء — لا يعلّق أي شيء) -->
-<script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
@@ -783,8 +803,14 @@ window.confirmCrop=()=>{
   if(!cropInst)return;
   const c=cropInst.getCroppedCanvas({width:300,height:300,imageSmoothingQuality:'high'});
   const url=c.toDataURL('image/jpeg',.9);
-  const pi=document.getElementById('pavImg');if(pi){pi.src=url;pi.style.display='block';}
-  const ai=document.getElementById('aAvImg');if(ai){ai.src=url;ai.style.display='block';}
+  // Profile modal avatar
+  const pi=document.getElementById('pavImg');
+  const pe=document.getElementById('pavEmoji');
+  if(pi){pi.src=url;pi.style.display='block';}
+  if(pe) pe.style.display='none';
+  // Auth bar avatar
+  const ai=document.getElementById('aAvImg');
+  if(ai){ai.src=url;ai.style.display='block';}
   document.getElementById('aAv').classList.add('has-img');
   localStorage.setItem('qAv',url);
   cropInst.destroy();cropInst=null;
@@ -796,6 +822,7 @@ function loadAv(){
   const s=localStorage.getItem('qAv');if(!s)return;
   const ai=document.getElementById('aAvImg');if(ai){ai.src=s;ai.style.display='block';}
   const pi=document.getElementById('pavImg');if(pi){pi.src=s;pi.style.display='block';}
+  const pe=document.getElementById('pavEmoji');if(pe)pe.style.display='none';
   document.getElementById('aAv').classList.add('has-img');
 }
 
@@ -1164,8 +1191,4 @@ window.sTab=(t)=>{
   if(t==='r')loadRatings();
 };
 
-/* ══ TOAST ══ */
-function showT(msg){document.querySelector('.toast')?.remove();const e=document.createElement('div');e.className='toast';e.textContent=msg;document.body.appendChild(e);setTimeout(()=>e.remove(),3200);}
-</script>
-</body>
-</html>
+/
