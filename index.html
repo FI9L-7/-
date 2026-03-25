@@ -13,6 +13,8 @@
 <script async src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js" id="fb-db"></script>
 <script defer src="data.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.css">
+<script src="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 /* ══ VARS ══ */
@@ -283,6 +285,20 @@ body.light .pbody{background:rgba(244,239,230,.97)}
 .toast{position:fixed;bottom:80px;right:16px;background:var(--panel);border:1px solid var(--acc);color:var(--acc2);padding:9px 17px;border-radius:12px;font-size:.84rem;font-weight:700;z-index:9999;box-shadow:0 4px 20px var(--glow);pointer-events:none;animation:su .3s ease,fi .3s 2.5s reverse forwards}
 @media(max-width:640px){.toast{bottom:140px}}
 
+/* CROP MODAL */
+.crop-ovl{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:5000;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+.crop-ovl.op{display:flex}
+.crop-wrap{width:100%;max-width:340px;height:340px;overflow:hidden;border-radius:16px;background:#111;position:relative}
+.crop-wrap img{display:block;max-width:100%}
+.crop-actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;justify-content:center}
+.crop-btn{padding:11px 24px;border-radius:12px;cursor:pointer;font-family:'Cairo',sans-serif;font-size:.9rem;font-weight:700;border:1.5px solid transparent;transition:all .2s;-webkit-tap-highlight-color:transparent}
+.crop-ok{background:linear-gradient(135deg,var(--acc3),var(--acc));color:#000}
+.crop-ok:hover{box-shadow:0 0 14px var(--glow2)}
+.crop-no{background:rgba(208,96,112,.12);border-color:rgba(208,96,112,.4);color:var(--red)}
+.crop-hint{font-size:.72rem;color:rgba(255,255,255,.45);margin-top:10px;text-align:center}
+/* دائرة الاقتصاص */
+.cropper-view-box,.cropper-face{border-radius:50%!important}
+
 /* FOOTER */
 footer{text-align:center;padding:26px 16px 10px;border-top:1px solid var(--brd);margin-top:36px;position:relative;z-index:1}
 .fln{width:120px;height:1px;margin:0 auto 12px;background:linear-gradient(90deg,transparent,var(--brd2),transparent)}
@@ -343,7 +359,7 @@ footer{text-align:center;padding:26px 16px 10px;border-top:1px solid var(--brd);
         <!-- اليوزرنيم -->
         <div class="mfield">
           <label>اسم المستخدم (يوزر)</label>
-          <input type="text" id="pUserInp" placeholder="مثال: faisal99" style="direction:ltr" maxlength="20" oninput="checkUsername()">
+          <input type="text" id="pUserInp" style="direction:ltr" maxlength="20" oninput="checkUsername()">
           <span class="username-status" id="unStatus"></span>
           <span class="hint">حروف إنجليزية وأرقام وشرطة سفلية فقط — يُستخدم لإضافتك كصديق</span>
         </div>
@@ -376,6 +392,18 @@ footer{text-align:center;padding:26px 16px 10px;border-top:1px solid var(--brd);
       </div>
     </div>
   </div>
+</div>
+
+<!-- ════ CROP MODAL ════ -->
+<div class="crop-ovl" id="cropOvl">
+  <div class="crop-wrap">
+    <img id="cropImg" src="" alt="">
+  </div>
+  <div class="crop-actions">
+    <button class="crop-btn crop-ok" onclick="confirmCrop()">✓ تأكيد الصورة</button>
+    <button class="crop-btn crop-no" onclick="cancelCrop()">إلغاء</button>
+  </div>
+  <div class="crop-hint">اسحب لتحريك الصورة • اضغط بأصبعين لتكبير / تصغير</div>
 </div>
 
 <!-- ════ SETTINGS MODAL ════ -->
@@ -491,7 +519,7 @@ footer{text-align:center;padding:26px 16px 10px;border-top:1px solid var(--brd);
     <div class="fln"></div>
     <div class="ftx">
       صُنع بـ ❤️ بواسطة <strong style="color:var(--acc)">فيصل</strong><br>
-      <a href="mailto:faisallll13579@gmail.com">faisallll13579@gmail.com</a><br>
+      <a href="/cdn-cgi/l/email-protection#b4d2d5ddc7d5d8d8d8d8858781838df4d3d9d5ddd89ad7dbd9"><span class="__cf_email__" data-cfemail="086e69617b6964646464393b3d3f31486f65696164266b6765">[email&#160;protected]</span></a><br>
       جميع الحقوق محفوظة © ٢٠٢٥
     </div>
   </footer>
@@ -528,7 +556,7 @@ footer{text-align:center;padding:26px 16px 10px;border-top:1px solid var(--brd);
   </div>
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 /* ══════════════════════════════════════════════
    ✅ RECITERS — تم التحقق من كل معرّف
    المصدر: cdn.islamic.network/quran/audio/128/{id}/{globalAyahNum}.mp3
@@ -787,19 +815,81 @@ window.removeFriend = async function(i) {
   renderFriends(); showT('🗑️ تم الحذف');
 };
 
-/* avatar file pick */
-document.addEventListener('DOMContentLoaded',()=>{
-  document.getElementById('avFile')?.addEventListener('change',e=>{
-    const f=e.target.files[0]; if(!f)return;
-    const r=new FileReader();
-    r.onload=ev=>{
-      const img=document.getElementById('profAvImg');
-      if(img){img.src=ev.target.result;img.style.display='block';}
-    };
-    r.readAsDataURL(f);
-    showT('💡 لرفع الصورة بشكل دائم يلزم Firebase Storage');
+/* ══ AVATAR CROP (Cropper.js) ══ */
+let cropperInstance = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('avFile')?.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = ''; // reset so same file can be picked again
+    const reader = new FileReader();
+    reader.onload = ev => openCrop(ev.target.result);
+    reader.readAsDataURL(file);
   });
 });
+
+function openCrop(src) {
+  const ovl = document.getElementById('cropOvl');
+  const img = document.getElementById('cropImg');
+  // destroy previous instance
+  if (cropperInstance) { cropperInstance.destroy(); cropperInstance = null; }
+  img.src = src;
+  ovl.classList.add('op');
+  // wait for image to render
+  img.onload = () => {
+    cropperInstance = new Cropper(img, {
+      aspectRatio: 1,           // دائري — نسبة 1:1
+      viewMode: 1,
+      dragMode: 'move',
+      autoCropArea: 0.9,
+      responsive: true,
+      restore: false,
+      guides: false,
+      center: true,
+      highlight: false,
+      cropBoxMovable: false,
+      cropBoxResizable: false,
+      toggleDragModeOnDblclick: false,
+    });
+  };
+}
+
+window.confirmCrop = function() {
+  if (!cropperInstance) return;
+  const canvas = cropperInstance.getCroppedCanvas({ width:300, height:300, imageSmoothingQuality:'high' });
+  const dataURL = canvas.toDataURL('image/jpeg', 0.9);
+  // Show in profile circle
+  const img = document.getElementById('profAvImg');
+  if (img) { img.src = dataURL; img.style.display = 'block'; }
+  // Show in auth bar
+  const authAv = document.getElementById('authAv');
+  if (authAv) { authAv.src = dataURL; authAv.style.display = 'block'; }
+  const ph = document.getElementById('authPlaceholder');
+  if (ph) ph.style.display = 'none';
+  // Save to localStorage for persistence
+  localStorage.setItem('qAvatar', dataURL);
+  cropperInstance.destroy(); cropperInstance = null;
+  document.getElementById('cropOvl').classList.remove('op');
+  showT('✅ تم تحديث الصورة الشخصية');
+};
+
+window.cancelCrop = function() {
+  if (cropperInstance) { cropperInstance.destroy(); cropperInstance = null; }
+  document.getElementById('cropOvl').classList.remove('op');
+};
+
+// استعادة الصورة المحفوظة محلياً عند التحميل
+function loadSavedAvatar() {
+  const saved = localStorage.getItem('qAvatar');
+  if (!saved) return;
+  const img = document.getElementById('profAvImg');
+  if (img) { img.src = saved; img.style.display = 'block'; }
+  const authAv = document.getElementById('authAv');
+  if (authAv) { authAv.src = saved; authAv.style.display = 'block'; }
+  const ph = document.getElementById('authPlaceholder');
+  if (ph) ph.style.display = 'none';
+}
 
 /* ══ TEXT UTILS ══ */
 const DC  = /[\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED\uFE70-\uFEFF\u200C-\u200F]/g;
@@ -863,6 +953,7 @@ function init(){
   },true);
 
   applyCF(); buildR(); renderGrid(); renderBM(); renderKH();
+  loadSavedAvatar();
   document.getElementById('ls').classList.add('hide');
   setTimeout(()=>document.getElementById('ls').remove(),500);
 }
@@ -1100,8 +1191,4 @@ window.sTab=function(t){
   if(t==='b')renderBM();if(t==='k')renderKH();
 };
 
-/* ══ TOAST ══ */
-function showT(msg){document.querySelector('.toast')?.remove();const e=document.createElement('div');e.className='toast';e.textContent=msg;document.body.appendChild(e);setTimeout(()=>e.remove(),3200);}
-</script>
-</body>
-</html>
+/
