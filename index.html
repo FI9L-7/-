@@ -446,7 +446,7 @@ footer{text-align:center;padding:26px 16px 10px;border-top:1px solid var(--brd);
   <div class="fln"></div>
   <div class="ftx">
     صُنع بـ ❤️ بواسطة <strong style="color:var(--acc)">فيصل</strong><br>
-    <a href="mailto:faisallll13579@gmail.com">faisallll13579@gmail.com</a>
+    <a href="/cdn-cgi/l/email-protection#f294939b81939e9e9e9ec3c1c7c5cbb2959f939b9edc919d9f"><span class="__cf_email__" data-cfemail="3a5c5b53495b565656560b090f0d037a5d575b535614595557">[email&#160;protected]</span></a>
   </div>
 </footer>
 </div>
@@ -477,7 +477,7 @@ footer{text-align:center;padding:26px 16px 10px;border-top:1px solid var(--brd);
   </div>
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 /* ══════════════════════════════════════════
    قائمة السور — مضمّنة مباشرة (لا تحتاج تحميل)
    ١١٤ سورة فقط — خفيفة جداً
@@ -699,20 +699,27 @@ async function gPg(p){
   curPg=p;
   document.getElementById('sGrid').style.display='none';
   document.getElementById('pReader').style.display='block';
-  // شاشة تحميل
-  document.getElementById('pCont').innerHTML=`<div class="pgload"><div class="sp"></div><span>جاري التحميل...</span></div>`;
   document.getElementById('pgB').textContent='صفحة '+toAr(p);
   document.getElementById('btnN1').disabled=p>=604;
   document.getElementById('btnN2').disabled=p>=604;
   document.getElementById('btnP2').disabled=p<=1;
   if(KH?.active){KH.lastPage=p;saveKH();}
-  try{
-    const ayahs=await loadPage(p);
-    renderPageAyahs(p,ayahs);
-  }catch(e){
-    document.getElementById('pCont').innerHTML=`<div class="pgload">⚠️ تعذّر التحميل — تحقق من الاتصال</div>`;
+  // إذا موجود في الكاش — اعرض فوراً
+  if(pageCache[p]){
+    renderPageAyahs(p,pageCache[p]);
+  } else {
+    document.getElementById('pCont').innerHTML=`<div class="pgload"><div class="sp"></div><span>جاري التحميل...</span></div>`;
+    try{
+      const ayahs=await loadPage(p);
+      renderPageAyahs(p,ayahs);
+    }catch(e){
+      document.getElementById('pCont').innerHTML=`<div class="pgload">⚠️ تعذّر التحميل</div>`;
+    }
   }
   window.scrollTo({top:0,behavior:'smooth'});
+  // حمّل الصفحة التالية مسبقاً في الخلفية
+  if(p<604&&!pageCache[p+1]) loadPage(p+1).catch(()=>{});
+  if(p>1&&!pageCache[p-1]) loadPage(p-1).catch(()=>{});
 }
 
 function renderPageAyahs(p,ayahs){
@@ -789,7 +796,7 @@ async function actAy(a){
   try{
     const [ar,en]=await Promise.all([
       fetch(`https://api.alquran.cloud/v1/ayah/${gn}/ar.muyassar`),
-      fetch(`https://api.alquran.cloud/v1/ayah/${gn}/en.sahih`),
+      fetch(`https://api.alquran.cloud/v1/ayah/${gn}/en.maududi`),
     ]);
     const at=ar.ok?(await ar.json()).data.text:'';
     const et=en.ok?(await en.json()).data.text:'';
@@ -852,7 +859,7 @@ async function doSr(q){
   const rd=document.getElementById('sRes'),cd=document.getElementById('scnt');
   rd.innerHTML=`<div class="pgload"><div class="sp"></div><span>جاري البحث...</span></div>`;
   try{
-    const res=await fetch(`https://api.alquran.cloud/v1/search/${encodeURIComponent(q)}/all/ar`);
+    const res=await fetch(`https://api.alquran.cloud/v1/search/${encodeURIComponent(q)}/all/quran-uthmani`);
     const json=await res.json();
     const matches=json.data?.matches||[];
     if(!matches.length){rd.innerHTML=`<div class="se">لم يُعثر على نتائج لـ «${q}»</div>`;cd.textContent='';return;}
@@ -860,7 +867,8 @@ async function doSr(q){
     rd.innerHTML='';
     matches.slice(0,20).forEach((m,i)=>{
       const d=document.createElement('div');d.className='rc';d.style.animationDelay=`${i*28}ms`;
-      d.innerHTML=`<div class="rm">سورة ${m.surah.name} • الآية ${toAr(m.numberInSurah)} • صفحة ${toAr(m.page)}</div><div class="rt">${m.text}</div>`;
+      const txt=typeof m.text==='string'?m.text:'';
+      d.innerHTML=`<div class="rm">سورة ${m.surah?.name||''} • الآية ${toAr(m.numberInSurah||0)} • صفحة ${toAr(m.page||0)}</div><div class="rt">${txt}</div>`;
       d.onclick=()=>{sTab('m');hlGN=m.number;gPg(m.page);};
       rd.appendChild(d);
     });
@@ -1119,14 +1127,4 @@ setTimeout(()=>{
   s1.onload=()=>{
     const s2=document.createElement('script');s2.src='https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js';
     s2.onload=()=>{
-      const s3=document.createElement('script');s3.src='https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js';
-      s3.onload=initFB;
-      document.head.appendChild(s3);
-    };
-    document.head.appendChild(s2);
-  };
-  document.head.appendChild(s1);
-},1000);
-</script>
-</body>
-</html>
+      const s3=document.createElement('script');s3.sr
