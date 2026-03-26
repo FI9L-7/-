@@ -609,69 +609,93 @@ function mkHL(orig,cqC){
 
 /* ══ LOAD QURAN (API + Cache) ══ */
 async function loadQuran() {
-  // ١. جرّب الكاش أولاً (أسرع)
+  const lsS = document.getElementById('lsS');
+
+  // ١. جرّب الكاش
   try {
     const cached = localStorage.getItem(CACHE_KEY);
     if (cached) {
-      const { ver, data } = JSON.parse(cached);
-      if (ver === CACHE_VER && data) { buildIndex(data); return; }
+      const obj = JSON.parse(cached);
+      if (obj.ver === CACHE_VER && Array.isArray(obj.data) && obj.data.length > 0) {
+        lsS.textContent = 'جاري بناء الفهرس...';
+        buildIndex(obj.data);
+        return;
+      }
     }
-  } catch(e) {}
+  } catch(e) {
+    localStorage.removeItem(CACHE_KEY); // امسح الكاش الفاسد
+  }
 
-  // ٢. حمّل من quran.json المحلي (موجود في نفس المجلد على GitHub)
-  document.getElementById('lsS').textContent = 'جاري تحميل القرآن...';
+  // ٢. حمّل من quran.json
+  lsS.textContent = 'جاري تحميل القرآن...';
+  let surahs = null;
   try {
     const res = await fetch('./quran.json');
     if (res.ok) {
+      lsS.textContent = 'جاري معالجة البيانات...';
       const json = await res.json();
-      const data = json.data.surahs;
-      try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ver: CACHE_VER, data })); } catch(e) {}
-      buildIndex(data);
-      return;
+      surahs = json.data?.surahs;
     }
-  } catch(e) {}
+  } catch(e) { /* سيجرب الـ API */ }
 
-  // ٣. fallback: API خارجي
+  // ٣. fallback: API
+  if (!surahs) {
+    try {
+      lsS.textContent = 'جاري التحميل من الإنترنت...';
+      const res = await fetch('https://api.alquran.cloud/v1/quran/quran-uthmani');
+      if (res.ok) {
+        const json = await res.json();
+        surahs = json.data?.surahs;
+      }
+    } catch(e) { /* فشل الـ API أيضاً */ }
+  }
+
+  if (!surahs || surahs.length === 0) {
+    lsS.textContent = '⚠️ تعذّر التحميل — تحقق من الاتصال';
+    return;
+  }
+
+  // احفظ في الكاش
   try {
-    const res = await fetch('https://api.alquran.cloud/v1/quran/quran-uthmani');
-    if (res.ok) {
-      const json = await res.json();
-      const data = json.data.surahs;
-      try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ver: CACHE_VER, data })); } catch(e) {}
-      buildIndex(data);
-      return;
-    }
-  } catch(e) {}
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ ver: CACHE_VER, data: surahs }));
+  } catch(e) { /* الكاش ممتلئ — لا بأس */ }
 
-  document.getElementById('lsS').textContent = '⚠️ تعذّر التحميل — تأكد من رفع ملف quran.json على GitHub';
+  lsS.textContent = 'جاري بناء الفهرس...';
+  buildIndex(surahs);
 }
 
 function buildIndex(surahs) {
-  SURAHS = surahs;
-  PM = [];
-  AY = [];
-  S2P = {};
-  for(let i=0;i<604;i++) PM.push([]);
-
-  surahs.forEach(s => {
-    s.ayahs.forEach(a => {
-      const dsp = dpTxt(s.number, a.numberInSurah, a.text);
-      const o = {
-        gNum: a.number, sNum: s.number, aNum: a.numberInSurah,
-        sName: s.name, text: a.text, dsp,
-        clean: cl(a.text), cmp: cl(a.text).replace(/\s/g,''),
-        page: a.page, juz: a.juz, hq: a.hizbQuarter,
-      };
-      AY.push(o);
-      if(o.page >= 1 && o.page <= 604) PM[o.page-1].push(o);
-      if(!S2P[s.number]) S2P[s.number] = a.page;
-    });
-  });
-
   try {
-    fuse = new Fuse(AY, {keys:['clean','cmp'], threshold:.32, distance:120, minMatchCharLength:2, includeScore:true});
-  } catch(e) { fuse = null; }
-  finishInit();
+    SURAHS = surahs;
+    PM = [];
+    AY = [];
+    S2P = {};
+    for(let i=0;i<604;i++) PM.push([]);
+
+    surahs.forEach(s => {
+      s.ayahs.forEach(a => {
+        const dsp = dpTxt(s.number, a.numberInSurah, a.text);
+        const o = {
+          gNum: a.number, sNum: s.number, aNum: a.numberInSurah,
+          sName: s.name, text: a.text, dsp,
+          clean: cl(a.text), cmp: cl(a.text).replace(/\s/g,''),
+          page: a.page, juz: a.juz, hq: a.hizbQuarter,
+        };
+        AY.push(o);
+        if(o.page >= 1 && o.page <= 604) PM[o.page-1].push(o);
+        if(!S2P[s.number]) S2P[s.number] = a.page;
+      });
+    });
+
+    try {
+      fuse = new Fuse(AY, {keys:['clean','cmp'], threshold:.32, distance:120, minMatchCharLength:2, includeScore:true});
+    } catch(e) { fuse = null; }
+
+    finishInit();
+  } catch(e) {
+    console.error('buildIndex error:', e);
+    document.getElementById('lsS').textContent = '⚠️ خطأ في معالجة البيانات: ' + e.message;
+  }
 }
 
 /* ══ INIT ══ */
