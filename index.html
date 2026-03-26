@@ -1,502 +1,4 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>مصحف النور</title>
-<link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
-<style>
-:root{
-  --bg:#04040a;--bg2:#080810;--bg3:#0d0d1c;--panel:#101020;
-  --brd:#1e1e3a;--brd2:#2c2c52;
-  --acc:#c9a84c;--acc2:#e8c97a;--acc3:#7a5010;
-  --glow:rgba(201,168,76,.13);--glow2:rgba(201,168,76,.30);
-  --txt:#ede5d5;--txt2:#9e9278;--txt3:#5a5040;
-  --grn:#4caf7d;--red:#d06070;
-  --qf:1.88rem;--ph:62px;--bnh:65px;
-}
-body.light{--bg:#f4efe6;--bg2:#ece6d8;--bg3:#e2dac8;--panel:#faf5ec;--brd:#d6cab0;--brd2:#b8a880;--acc:#8a5a10;--acc2:#5e3a06;--acc3:#c49040;--glow:rgba(138,90,16,.1);--glow2:rgba(138,90,16,.24);--txt:#25180a;--txt2:#58402e;--txt3:#9a8060;--grn:#1d6a40;--red:#b03050;}
-*{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--txt);font-family:'Cairo',sans-serif;min-height:100vh;overflow-x:hidden;transition:background .3s,color .3s;padding-bottom:calc(var(--ph)+22px)}
-body.fsm{--qf:1.52rem}body.flg{--qf:2.35rem}
-@keyframes spin{to{transform:rotate(360deg)}}
-@keyframes fu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-@keyframes fi{from{opacity:0}to{opacity:1}}
-@keyframes su{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-@keyframes gl{0%,100%{box-shadow:0 0 0 0 var(--glow2)}50%{box-shadow:0 0 0 7px transparent}}
-@keyframes hlg{0%,100%{background:rgba(201,168,76,.16)}50%{background:rgba(201,168,76,.35)}}
-
-/* WRAP */
-.wrap{max-width:1000px;margin:auto;padding:14px}
-
-/* HEADER */
-header{text-align:center;padding:26px 16px 12px;position:relative}
-.hey{font-size:.68rem;letter-spacing:.48em;color:var(--acc);margin-bottom:5px}
-h1{font-family:'Amiri',serif;font-size:clamp(2rem,5vw,3.2rem);font-weight:700;background:linear-gradient(135deg,var(--acc2),var(--acc),var(--acc3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.2;margin-bottom:4px}
-.hln{width:180px;height:1px;margin:12px auto;background:linear-gradient(90deg,transparent,var(--acc),transparent)}
-.hac{position:absolute;top:18px;left:14px}
-.ib{width:40px;height:40px;background:var(--panel);border:1px solid var(--brd2);color:var(--txt2);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.05rem;transition:all .2s}
-.ib:hover{border-color:var(--acc);color:var(--acc)}
-
-/* ✅ AUTH BAR - صورة دائرية مضمونة */
-.abar{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--brd);cursor:pointer;transition:background .2s}
-.abar:hover{background:var(--bg3)}
-.aav-wrap{width:36px;height:36px;border-radius:50%;border:2px solid var(--brd2);background:var(--bg3);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:1rem;transition:border-color .2s}
-.aav-wrap.has{border-color:var(--acc)}
-.aav-wrap img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-.ainf{flex:1;min-width:0}
-.anm{font-size:.82rem;color:var(--txt);font-weight:700;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.asub{font-size:.68rem;color:var(--txt3);display:block}
-.abtn{padding:6px 14px;border-radius:10px;cursor:pointer;font-family:'Cairo',sans-serif;font-size:.78rem;font-weight:700;border:1px solid var(--acc3);background:transparent;color:var(--acc2);transition:all .2s;flex-shrink:0}
-.abtn:hover{background:rgba(201,168,76,.1);border-color:var(--acc)}
-
-/* TABS */
-.ntabs{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin:12px 0 18px}
-.nb{padding:9px 18px;background:var(--panel);border:1px solid var(--brd2);color:var(--txt2);cursor:pointer;border-radius:10px;font-family:'Cairo',sans-serif;font-size:.83rem;font-weight:700;transition:all .22s;position:relative;overflow:hidden}
-.nb span{position:relative;z-index:1}
-.nb::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--acc),var(--acc3));opacity:0;transition:opacity .22s}
-.nb.on{border-color:var(--acc);color:#000;box-shadow:0 0 16px var(--glow2)}.nb.on::before{opacity:1}
-.bnav{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(4,4,10,.97);border-top:1px solid var(--brd2);padding:7px 0 10px;z-index:900;backdrop-filter:blur(22px);justify-content:space-around}
-body.light .bnav{background:rgba(244,239,230,.97)}
-.bnb{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;color:var(--txt3);cursor:pointer;font-family:'Cairo',sans-serif;font-size:.59rem;font-weight:600;padding:5px 8px;min-width:54px;transition:all .2s}
-.bnb .bi{font-size:1.3rem;line-height:1}
-.bnb.on{color:var(--acc)}.bnb.on .bi{filter:drop-shadow(0 0 5px var(--acc))}
-@media(max-width:640px){.ntabs{display:none}.bnav{display:flex}body{padding-bottom:calc(var(--ph) + var(--bnh) + 10px)}}
-
-/* GRID */
-#sGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px}
-.sc{background:var(--panel);border:1px solid var(--brd);border-radius:14px;padding:14px 12px;cursor:pointer;transition:all .25s;text-align:center;position:relative;overflow:hidden;animation:fu .3s ease both}
-.sc::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--acc3),var(--acc));transform:scaleX(0);transform-origin:right;transition:transform .3s}
-.sc:hover{border-color:var(--acc3);transform:translateY(-2px);background:var(--bg3)}.sc:hover::after{transform:scaleX(1);transform-origin:left}
-.sc-n{font-size:.6rem;color:var(--acc);font-weight:700;letter-spacing:.1em;display:block;margin-bottom:5px}
-.sc-nm{font-family:'Amiri',serif;font-size:1.2rem;color:var(--txt);display:block;margin-bottom:3px}
-.sc-ay{font-size:.62rem;color:var(--txt3)}
-
-/* READER */
-.ptop{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-.pbt{padding:8px 13px;background:var(--panel);border:1px solid var(--brd2);color:var(--txt2);border-radius:10px;cursor:pointer;font-family:'Cairo',sans-serif;font-size:.8rem;font-weight:700;transition:all .22s;white-space:nowrap}
-.pbt:hover{border-color:var(--acc);color:var(--acc)}.pbt:disabled{opacity:.3;pointer-events:none}
-.pmid{display:flex;flex-direction:column;align-items:center;gap:4px}
-.pgb{background:linear-gradient(135deg,var(--acc3),var(--acc));color:#000;font-weight:900;font-size:.85rem;padding:5px 16px;border-radius:20px}
-.pgm{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
-.chip{background:var(--bg3);border:1px solid var(--brd2);color:var(--txt2);font-size:.67rem;padding:3px 10px;border-radius:10px;font-weight:700}
-.jrow{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
-.jlbl{font-size:.78rem;color:var(--txt3);white-space:nowrap}
-.jinp{padding:8px 12px;background:var(--panel);border:1px solid var(--brd2);color:var(--txt);font-family:'Cairo',sans-serif;font-size:.9rem;border-radius:10px;outline:none;width:90px;text-align:center;transition:all .2s}
-.jinp:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--glow)}
-.jbtn{padding:8px 14px;background:var(--bg3);border:1px solid var(--acc3);color:var(--acc2);border-radius:10px;cursor:pointer;font-family:'Cairo',sans-serif;font-size:.8rem;font-weight:700;transition:all .22s}
-.jbtn:hover{border-color:var(--acc)}
-.jsep{width:1px;height:24px;background:var(--brd2);margin:0 4px}
-.mpage{background:var(--panel);padding:38px 32px;border-radius:20px;border:1px solid var(--brd);min-height:200px;animation:fi .3s ease;box-shadow:0 20px 70px rgba(0,0,0,.65)}
-.pgload{display:flex;align-items:center;justify-content:center;gap:10px;padding:60px 20px;color:var(--txt3)}
-.sp{width:28px;height:28px;border:2px solid var(--brd2);border-top-color:var(--acc);border-radius:50%;animation:spin .75s linear infinite;flex-shrink:0}
-.shdr{text-align:center;margin:14px 0 10px}.shdr:first-child{margin-top:0}
-.sband{display:inline-flex;align-items:center;font-family:'Amiri',serif;font-size:1.55rem;color:var(--acc2);padding:6px 22px;border:1px solid var(--acc3);border-radius:30px;background:rgba(201,168,76,.06)}
-.basl{font-family:'Amiri Quran',serif;font-size:1.8rem;color:var(--acc);text-align:center;display:block;margin:10px 0 14px;padding-bottom:12px;border-bottom:1px solid var(--brd)}
-.ayah{font-family:'Amiri Quran',serif;font-size:var(--qf);cursor:pointer;transition:background .2s;border-radius:6px;padding:2px 4px;line-height:3.4}
-.ayah:hover{background:rgba(201,168,76,.08)}
-.ayah.hl{background:rgba(201,168,76,.16);border-radius:8px;animation:hlg 1.5s ease-in-out 3}
-.ayah.phl{background:rgba(201,168,76,.2)}
-.an{display:inline-flex;align-items:center;justify-content:center;width:25px;height:25px;background:var(--bg3);border:1px solid var(--brd2);border-radius:50%;font-family:'Cairo',sans-serif;font-size:.56rem;color:var(--acc);margin:0 3px;vertical-align:middle;font-weight:700}
-.ayah.bkm .an{background:rgba(201,168,76,.22);border-color:var(--acc)}
-/* ✅ تمييز كلمة البحث */
-.ayah mark,.rc mark{background:rgba(201,168,76,.4);color:var(--acc2);border-radius:3px;padding:0 2px;font-family:inherit;font-size:inherit}
-.pbot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:16px;flex-wrap:wrap}
-.nsbt{background:var(--bg3);border:1.5px solid var(--acc3);color:var(--acc2);padding:9px 18px;border-radius:10px;cursor:pointer;font-family:'Cairo',sans-serif;font-size:.82rem;font-weight:700;transition:all .22s}
-.nsbt:hover{border-color:var(--acc)}
-
-/* SEARCH */
-.sw{position:relative;margin-bottom:12px}
-.si{position:absolute;right:18px;top:50%;transform:translateY(-50%);color:var(--txt3);pointer-events:none}
-.sinp{width:100%;padding:17px 50px;background:var(--panel);border:1px solid var(--brd2);color:var(--txt);font-family:'Cairo',sans-serif;font-size:1.1rem;border-radius:16px;outline:none;transition:all .22s}
-.sinp:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--glow)}
-.sinp::placeholder{color:var(--txt3)}
-.scl{position:absolute;left:14px;top:50%;transform:translateY(-50%);background:var(--brd2);border:none;color:var(--txt3);cursor:pointer;width:26px;height:26px;border-radius:50%;display:none;align-items:center;justify-content:center;font-size:.78rem}
-.scl.on{display:flex}.scl:hover{background:var(--red);color:#fff}
-.scnt{font-size:.72rem;color:var(--txt3);margin-bottom:10px;min-height:16px}
-.rc{background:var(--panel);padding:14px 17px;border-radius:13px;margin:8px 0;border:1px solid var(--brd);cursor:pointer;transition:all .2s;position:relative;overflow:hidden;animation:fu .25s ease both}
-.rc::before{content:'';position:absolute;right:0;top:0;bottom:0;width:3px;background:var(--acc);transform:scaleY(0);transition:transform .2s}
-.rc:hover{border-color:var(--acc3);background:var(--bg3);transform:translateX(-2px)}.rc:hover::before{transform:scaleY(1)}
-.rm{font-size:.7rem;color:var(--acc);font-weight:700;margin-bottom:6px}
-.rt{font-family:'Amiri Quran',serif;font-size:1.3rem;line-height:2.5;color:var(--txt)}
-.se{text-align:center;padding:36px 20px;color:var(--txt3)}
-
-/* BOOKMARKS */
-.be{text-align:center;padding:60px 20px;color:var(--txt3)}
-.bico{font-size:2.8rem;margin-bottom:10px}
-.bitem{background:var(--panel);padding:14px 16px;border-radius:13px;margin:8px 0;border:1px solid var(--brd);display:flex;align-items:center;gap:12px;animation:fu .25s ease both}
-.binf{flex:1;cursor:pointer}.binf:hover .bt{color:var(--acc2)}
-.bm2{font-size:.7rem;color:var(--acc);font-weight:700;margin-bottom:5px}
-.bt{font-family:'Amiri Quran',serif;font-size:1.15rem;line-height:2.2;color:var(--txt2);transition:color .2s}
-.bdl{background:rgba(208,96,112,.1);border:1px solid rgba(208,96,112,.3);color:var(--red);padding:7px 12px;border-radius:8px;cursor:pointer;font-size:.75rem;transition:all .2s;flex-shrink:0;font-family:'Cairo',sans-serif}
-.bdl:hover{background:rgba(208,96,112,.22);border-color:var(--red)}
-
-/* KHATMA */
-.kcard{background:var(--panel);border:1px solid var(--brd);border-radius:16px;padding:20px;margin-bottom:14px;animation:fu .3s ease both}
-.ktit{font-size:1rem;font-weight:700;color:var(--acc2);margin-bottom:14px}
-.pgrid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:4px}
-.pcard{background:var(--bg3);border:1.5px solid var(--brd2);border-radius:14px;padding:18px 14px;cursor:pointer;transition:all .25s;text-align:center}
-.pcard:hover{border-color:var(--acc);transform:translateY(-2px)}
-.pio{font-size:1.9rem;margin-bottom:8px}.pnm2{font-size:.95rem;font-weight:700;color:var(--txt);margin-bottom:3px}.pdt{font-size:.7rem;color:var(--txt3)}
-.pbw{background:var(--bg3);border-radius:10px;height:9px;overflow:hidden;margin-bottom:8px}
-.pbf{height:100%;border-radius:10px;background:linear-gradient(90deg,var(--acc3),var(--acc2));transition:width .7s ease}
-.pbl{display:flex;justify-content:space-between;font-size:.72rem;color:var(--txt3);margin-bottom:4px}
-.tdc{background:linear-gradient(135deg,rgba(201,168,76,.1),rgba(201,168,76,.04));border:1px solid var(--acc3);border-radius:12px;padding:16px;margin-top:14px}
-.tdl{font-size:.75rem;color:var(--acc);font-weight:700;margin-bottom:7px}
-.tdr{font-family:'Amiri',serif;font-size:1.05rem;color:var(--txt);margin-bottom:12px;line-height:2}
-.ka{display:flex;gap:8px;flex-wrap:wrap}
-.kb{padding:9px 18px;border-radius:10px;cursor:pointer;font-family:'Cairo',sans-serif;font-size:.82rem;font-weight:700;border:1px solid;transition:all .2s}
-.kb-p{background:linear-gradient(135deg,var(--acc3),var(--acc));border-color:var(--acc);color:#000}
-.kb-s{background:transparent;border-color:var(--brd2);color:var(--txt2)}.kb-s:hover{border-color:var(--red);color:var(--red)}
-.kb-g{background:rgba(76,175,125,.1);border-color:var(--grn);color:var(--grn)}
-.ddots{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px}
-.dot{width:30px;height:30px;border-radius:8px;border:1px solid var(--brd2);background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:.6rem;color:var(--txt3)}
-.dot.done{border-color:var(--grn);background:rgba(76,175,125,.12);color:var(--grn)}
-.dot.today{border-color:var(--acc);color:var(--acc);font-weight:700}
-
-/* RATINGS */
-.rcard{background:var(--panel);border:1px solid var(--brd);border-radius:16px;padding:20px;margin-bottom:14px}
-.rav{font-size:3.5rem;font-weight:900;color:var(--acc2);line-height:1}
-.rcnt{font-size:.78rem;color:var(--txt3);margin-top:4px}
-.rbar-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:.72rem;color:var(--txt3)}
-.rbar-bg{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
-.rbar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--acc3),var(--acc));transition:width .5s ease}
-.rrev{background:var(--bg3);border-radius:12px;padding:12px 14px;margin-bottom:10px;border:1px solid var(--brd);animation:fu .25s ease both}
-.rrev-h{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-.rrev-av{width:28px;height:28px;border-radius:50%;background:var(--brd2);display:flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0}
-.rrev-nm{font-size:.78rem;font-weight:700;color:var(--txt);flex:1}
-.rrev-tx{font-size:.82rem;color:var(--txt2);line-height:1.7}
-.mystars{display:flex;gap:8px;margin:12px 0;justify-content:center}
-.mstar{font-size:2.2rem;cursor:pointer;transition:all .2s;opacity:.3}
-.mstar.lit{opacity:1}
-
-/* MODALS */
-.movl{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:3000;backdrop-filter:blur(6px);align-items:flex-end;justify-content:center}
-.movl.op{display:flex}
-@media(min-width:641px){.movl{align-items:center;padding:20px}}
-.mbox{background:var(--bg2);border:1px solid var(--brd2);border-radius:24px 24px 0 0;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;animation:su .3s ease}
-@media(min-width:641px){.mbox{border-radius:20px}}
-.mdrag{width:44px;height:4px;background:var(--brd2);border-radius:2px;margin:14px auto 0}
-.mhead{padding:14px 18px 0;display:flex;align-items:center;justify-content:space-between}
-.mtit{font-size:1rem;font-weight:700;color:var(--acc2)}
-.mcls{width:30px;height:30px;background:var(--bg3);border:1px solid var(--brd2);border-radius:8px;cursor:pointer;color:var(--txt2);display:flex;align-items:center;justify-content:center;font-size:.85rem;transition:all .2s}
-.mcls:hover{border-color:var(--red);color:var(--red)}
-.mbody{padding:16px 18px 28px}
-.mfield{margin-bottom:14px}
-.mfield label{font-size:.76rem;color:var(--txt3);display:block;margin-bottom:5px;font-weight:700}
-.mfield input,.mfield select,.mfield textarea{width:100%;padding:10px 13px;background:var(--bg3);border:1px solid var(--brd2);color:var(--txt);font-family:'Cairo',sans-serif;font-size:.88rem;border-radius:10px;outline:none;transition:all .2s;resize:none}
-.mfield input:focus,.mfield select:focus,.mfield textarea:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--glow)}
-.uns{font-size:.72rem;margin-top:4px;display:block}
-.uns.ok{color:var(--grn)}.uns.er{color:var(--red)}.uns.ck{color:var(--txt3)}
-.hint{font-size:.68rem;color:var(--txt3);margin-top:4px;display:block}
-
-/* ✅ PROFILE AVATAR - دائرية مضمونة */
-.pbanner{height:90px;background:linear-gradient(135deg,var(--acc3),var(--acc));border-radius:24px 24px 0 0}
-@media(min-width:641px){.pbanner{border-radius:20px 20px 0 0}}
-.pavwrap{position:relative;width:80px;height:80px;margin:-40px auto 10px;z-index:2}
-.pav{
-  width:80px;height:80px;
-  border-radius:50%;
-  border:3px solid var(--bg2);
-  background:var(--bg3);
-  overflow:hidden;
-  cursor:pointer;
-  transition:border-color .2s;
-  display:flex;align-items:center;justify-content:center;
-  font-size:2rem;
-}
-.pav img{
-  position:absolute;top:0;left:0;
-  width:100%;height:100%;
-  object-fit:cover;
-  border-radius:50%;
-  display:none;
-}
-.pav:hover{border-color:var(--acc)}
-.paved{position:absolute;bottom:2px;left:2px;width:22px;height:22px;background:var(--acc);border-radius:50%;border:2px solid var(--bg2);display:flex;align-items:center;justify-content:center;font-size:.58rem;pointer-events:none}
-.pfr{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
-.btng{flex:1;padding:10px;background:linear-gradient(135deg,var(--acc3),var(--acc));border:none;border-radius:12px;color:#000;font-family:'Cairo',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;transition:all .2s}
-.btnr{padding:10px 16px;background:rgba(208,96,112,.1);border:1px solid rgba(208,96,112,.3);color:var(--red);border-radius:12px;cursor:pointer;font-family:'Cairo',sans-serif;font-size:.85rem;font-weight:700;transition:all .2s}
-.btno{padding:10px 14px;background:transparent;border:1px solid var(--brd2);color:var(--txt2);border-radius:12px;cursor:pointer;font-family:'Cairo',sans-serif;font-size:.85rem;font-weight:600;transition:all .2s}
-.fitem{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg3);border-radius:10px;border:1px solid var(--brd);margin-bottom:7px}
-.fdl{background:none;border:none;color:var(--txt3);cursor:pointer;font-size:.85rem;padding:4px;transition:color .2s}
-.fdl:hover{color:var(--red)}
-
-/* SETTINGS */
-.srow{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--brd)}
-.srow:last-child{border-bottom:none}
-.slbl{font-size:.9rem;color:var(--txt2)}.slbl small{display:block;font-size:.7rem;color:var(--txt3);margin-top:2px}
-.tsw{position:relative;width:50px;height:27px;flex-shrink:0}
-.tsw input{opacity:0;width:0;height:0}
-.ttr{position:absolute;inset:0;background:var(--brd2);border-radius:27px;cursor:pointer;transition:background .2s}
-.ttr::before{content:'';position:absolute;top:3px;right:3px;width:21px;height:21px;background:#fff;border-radius:50%;transition:transform .2s}
-.tsw input:checked+.ttr{background:var(--acc)}.tsw input:checked+.ttr::before{transform:translateX(-23px)}
-.sgc{display:flex;gap:4px}
-.sgb{padding:5px 13px;border-radius:8px;border:1px solid var(--brd2);background:var(--panel);color:var(--txt2);cursor:pointer;font-family:'Cairo',sans-serif;font-size:.8rem;font-weight:600;transition:all .2s}
-.sgb.on{border-color:var(--acc);color:var(--acc);background:var(--glow)}
-
-/* PLAYER */
-.ply{position:fixed;bottom:0;left:0;right:0;z-index:800;transform:translateY(110%);transition:transform .38s cubic-bezier(.22,.61,.36,1)}
-.ply.up{transform:translateY(0)}
-@media(max-width:640px){.ply{bottom:var(--bnh)}}
-.pmini{height:var(--ph);display:flex;align-items:center;padding:0 14px;gap:10px;background:rgba(5,5,12,.97);backdrop-filter:blur(24px);border-top:1px solid var(--brd2);cursor:pointer;box-shadow:0 -10px 30px rgba(0,0,0,.5);position:relative}
-.pmini::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--acc),transparent)}
-body.light .pmini{background:rgba(244,239,230,.97)}
-.pico{width:36px;height:36px;background:linear-gradient(135deg,var(--acc3),var(--acc));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;box-shadow:0 0 12px var(--glow2);animation:gl 2s ease-in-out infinite}
-.pico.pau{background:var(--bg3);box-shadow:none;animation:none}
-.pinf{flex:1;min-width:0}
-.ptit{font-family:'Amiri',serif;color:var(--acc2);font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.prec{font-size:.65rem;color:var(--txt3);margin-top:1px}
-.pexp{width:30px;height:30px;background:var(--bg3);border:1px solid var(--brd2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--txt2);font-size:.7rem;transition:transform .3s;flex-shrink:0}
-.ply.ex .pexp{transform:rotate(180deg)}
-.pcls{width:30px;height:30px;background:rgba(208,96,112,.1);border:1px solid rgba(208,96,112,.3);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--red);font-size:.85rem;cursor:pointer;transition:all .2s;flex-shrink:0}
-.pcls:hover{background:rgba(208,96,112,.22)}
-.pbody{max-height:0;overflow:hidden;background:rgba(5,5,12,.97);border-top:1px solid var(--brd);transition:max-height .3s ease,padding .3s ease}
-body.light .pbody{background:rgba(244,239,230,.97)}
-.ply.ex .pbody{max-height:320px;padding:13px 16px 15px}
-.tfbx{background:var(--bg3);border:1px solid var(--brd);border-radius:10px;padding:9px 13px;font-size:.8rem;color:var(--txt2);line-height:1.85;margin-bottom:10px;max-height:110px;overflow-y:auto}
-.tf-ar{font-family:'Amiri',serif;font-size:.9rem;line-height:2;margin-bottom:7px;direction:rtl;text-align:right}
-.tf-en{font-size:.73rem;color:var(--txt3);line-height:1.7;direction:ltr;text-align:left;border-top:1px solid var(--brd);padding-top:7px;font-family:Georgia,serif}
-.rgrid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
-.rbtn{background:var(--bg3);border:1px solid var(--brd2);color:var(--txt2);padding:6px 13px;cursor:pointer;border-radius:8px;font-family:'Cairo',sans-serif;font-size:.72rem;font-weight:700;transition:all .2s}
-.rbtn:hover{border-color:var(--acc3);color:var(--txt)}
-.rbtn.pl{background:linear-gradient(135deg,var(--acc3),var(--acc));border-color:var(--acc);color:#000}
-.rbtn.ld{opacity:.55;pointer-events:none}
-.rbtn.er{border-color:var(--red);color:var(--red)}
-.pnvr{display:flex;gap:6px;margin-bottom:9px}
-.pnb{background:var(--panel);border:1px solid var(--brd2);color:var(--txt2);padding:5px 12px;border-radius:7px;cursor:pointer;font-family:'Cairo',sans-serif;font-size:.72rem;font-weight:600;transition:all .2s}
-.pnb:hover{border-color:var(--acc3)}
-#aud{width:100%;height:32px;border-radius:8px}
-
-/* TOAST */
-.toast{position:fixed;bottom:80px;right:16px;background:var(--panel);border:1px solid var(--acc);color:var(--acc2);padding:9px 17px;border-radius:12px;font-size:.84rem;font-weight:700;z-index:9999;box-shadow:0 4px 20px var(--glow);pointer-events:none;animation:su .3s ease,fi .3s 2.5s reverse forwards}
-@media(max-width:640px){.toast{bottom:140px}}
-
-footer{text-align:center;padding:26px 16px 10px;border-top:1px solid var(--brd);margin-top:36px}
-.fln{width:120px;height:1px;margin:0 auto 12px;background:linear-gradient(90deg,transparent,var(--brd2),transparent)}
-.ftx{font-size:.7rem;color:var(--txt3);line-height:2.2}
-.ftx a{color:var(--txt3);text-decoration:none}.ftx a:hover{color:var(--acc)}
-::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--brd2);border-radius:3px}
-.sec{animation:fi .3s ease}
-@media(max-width:600px){.mpage{padding:24px 13px}#sGrid{grid-template-columns:repeat(auto-fill,minmax(128px,1fr))}.jrow{gap:6px}.jinp{width:70px}}
-</style>
-</head>
-<body>
-
-<!-- PROFILE -->
-<div class="movl" id="profOvl" onclick="if(event.target===this)closePro()">
-<div class="mbox">
-  <div class="pbanner"></div>
-  <div class="pavwrap">
-    <div class="pav" id="pav" onclick="document.getElementById('avFile').click()">
-      <span id="pavE">👤</span>
-      <img id="pavI" src="" alt="">
-    </div>
-    <div class="paved">✏️</div>
-    <input type="file" id="avFile" accept="image/*" style="display:none">
-  </div>
-  <div class="mbody" style="padding-top:6px">
-    <div id="pNL" style="text-align:center">
-      <div style="font-size:1rem;font-weight:700;color:var(--txt);margin-bottom:6px">مرحباً 👋</div>
-      <div style="font-size:.8rem;color:var(--txt3);margin-bottom:18px">سجّل دخولك لحفظ بياناتك</div>
-      <button class="btng" style="width:100%" onclick="doLogin()">G&nbsp; دخول بقوقل</button>
-    </div>
-    <div id="pL" style="display:none">
-      <div style="text-align:center;margin-bottom:14px">
-        <div style="font-size:1.05rem;font-weight:700;color:var(--txt)" id="pDN">—</div>
-        <div style="font-size:.72rem;color:var(--txt3)" id="pEM">—</div>
-        <div style="font-size:.72rem;color:var(--acc);margin-top:2px;direction:ltr;unicode-bidi:embed;font-family:monospace" id="pUN"></div>
-      </div>
-      <div class="mfield"><label>الاسم المعروض</label><input type="text" id="pNI"></div>
-      <div class="mfield">
-        <label>اسم المستخدم</label>
-        <input type="text" id="pUI" style="direction:ltr;font-family:monospace" maxlength="20" oninput="chkUN()">
-        <span class="uns" id="unSt"></span>
-        <span class="hint">حروف إنجليزية وأرقام وشرطة سفلية فقط</span>
-      </div>
-      <div class="mfield">
-        <label>خصوصية الختمة</label>
-        <select id="pPriv">
-          <option value="public">🌍 عامة — يراها أصدقائي</option>
-          <option value="private">🔒 خاصة</option>
-        </select>
-      </div>
-      <div style="font-size:.82rem;font-weight:700;color:var(--txt2);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--brd)">👥 الأصدقاء</div>
-      <div id="fList" style="margin-bottom:10px"></div>
-      <div style="display:flex;gap:7px;margin-bottom:16px">
-        <input type="text" id="fUI" style="flex:1;padding:9px 12px;background:var(--bg3);border:1px solid var(--brd2);color:var(--txt);font-family:monospace;font-size:.85rem;border-radius:10px;outline:none;direction:ltr" placeholder="@username" maxlength="20">
-        <button class="btno" onclick="addFriend()" style="padding:9px 14px;flex-shrink:0">إضافة +</button>
-      </div>
-      <div class="pfr">
-        <button class="btng" onclick="savePro()">حفظ</button>
-        <button class="btnr" onclick="doLogout();closePro()">خروج</button>
-        <button class="btno" onclick="closePro()">إغلاق</button>
-      </div>
-    </div>
-  </div>
-</div>
-</div>
-
-<!-- SETTINGS -->
-<div class="movl" id="sOvl" onclick="if(event.target===this)closeSets()">
-<div class="mbox">
-  <div class="mdrag"></div>
-  <div class="mhead"><div class="mtit">⚙️ الإعدادات</div><button class="mcls" onclick="closeSets()">✕</button></div>
-  <div class="mbody">
-    <div class="srow"><div class="slbl">المظهر الفاتح<small>داكن / فاتح</small></div><label class="tsw"><input type="checkbox" id="thT"><div class="ttr"></div></label></div>
-    <div class="srow"><div class="slbl">حجم خط القرآن</div><div class="sgc"><button class="sgb" id="fsm" onclick="setF('sm')">ص</button><button class="sgb on" id="fmd" onclick="setF('md')">م</button><button class="sgb" id="flg" onclick="setF('lg')">ك</button></div></div>
-    <div class="srow"><div class="slbl">إخفاء التفسير</div><label class="tsw"><input type="checkbox" id="htT"><div class="ttr"></div></label></div>
-    <div class="srow"><div class="slbl">تشغيل الآية التالية تلقائياً</div><label class="tsw"><input type="checkbox" id="apT"><div class="ttr"></div></label></div>
-  </div>
-</div>
-</div>
-
-<!-- RATE -->
-<div class="movl" id="rOvl" onclick="if(event.target===this)closeRate()">
-<div class="mbox">
-  <div class="mdrag"></div>
-  <div class="mhead"><div class="mtit">⭐ قيّم التطبيق</div><button class="mcls" onclick="closeRate()">✕</button></div>
-  <div class="mbody">
-    <div style="text-align:center;font-size:.9rem;color:var(--txt2);margin-bottom:6px">كم تعطي مصحف النور؟</div>
-    <div class="mystars" id="mStars">
-      <span class="mstar" onclick="pickStar(1)">⭐</span>
-      <span class="mstar" onclick="pickStar(2)">⭐</span>
-      <span class="mstar" onclick="pickStar(3)">⭐</span>
-      <span class="mstar" onclick="pickStar(4)">⭐</span>
-      <span class="mstar" onclick="pickStar(5)">⭐</span>
-    </div>
-    <div class="mfield"><label>تعليق (اختياري)</label><textarea id="rTxt" rows="3" placeholder="شاركنا رأيك..."></textarea></div>
-    <button class="btng" style="width:100%" onclick="submitRat()">إرسال</button>
-  </div>
-</div>
-</div>
-
-<div class="wrap">
-<header>
-  <div class="hac"><button class="ib" id="setBtn">⚙️</button></div>
-  <div class="hey">✦ القرآن الكريم ✦</div>
-  <h1>مصحف النور</h1>
-  <div class="hln"></div>
-</header>
-
-<!-- ✅ AUTH BAR -->
-<div class="abar" onclick="openPro()">
-  <div class="aav-wrap" id="aAvW">
-    <span id="aAvE">👤</span>
-    <img id="aAvI" src="" alt="" style="display:none;border-radius:50%;width:100%;height:100%;object-fit:cover">
-  </div>
-  <div class="ainf">
-    <span class="anm" id="aNm">غير مسجّل</span>
-    <span class="asub" id="aSub">اضغط للدخول</span>
-  </div>
-  <button class="abtn" id="aBt" onclick="event.stopPropagation();openPro()">دخول</button>
-</div>
-
-<div class="ntabs">
-  <button id="tm" class="nb on" onclick="sTab('m')"><span>📖 المصحف</span></button>
-  <button id="ts" class="nb"    onclick="sTab('s')"><span>🔍 البحث</span></button>
-  <button id="tb" class="nb"    onclick="sTab('b')"><span>🔖 المحفوظات</span></button>
-  <button id="tk" class="nb"    onclick="sTab('k')"><span>🌙 الختمة</span></button>
-  <button id="tr" class="nb"    onclick="sTab('r')"><span>⭐ تقييمات</span></button>
-</div>
-
-<div id="tab-m" class="sec">
-  <div id="sGrid"></div>
-  <div id="pReader" style="display:none">
-    <div class="ptop">
-      <button class="pbt" onclick="goIdx()">☰ السور</button>
-      <div class="pmid">
-        <div class="pgb" id="pgB">صفحة ١</div>
-        <div class="pgm"><span class="chip" id="jzC">الجزء ١</span><span class="chip" id="hzC">الحزب ١</span></div>
-      </div>
-      <button class="pbt" id="btnN1" disabled>◀ التالية</button>
-    </div>
-    <div class="jrow">
-      <span class="jlbl">صفحة:</span>
-      <input type="number" class="jinp" id="jpI" min="1" max="604">
-      <button class="jbtn" onclick="doJP()">انتقل</button>
-      <div class="jsep"></div>
-      <span class="jlbl">آية:</span>
-      <input type="number" class="jinp" id="jaI" min="1" max="6236">
-      <button class="jbtn" onclick="doJA()">انتقل</button>
-    </div>
-    <div class="mpage" id="pCont"></div>
-    <div class="pbot">
-      <button class="pbt" id="btnP2" disabled>السابقة ▶</button>
-      <button class="nsbt" id="nsBt" style="display:none">السورة التالية ◄</button>
-      <button class="pbt" id="btnN2" disabled>◀ التالية</button>
-    </div>
-  </div>
-</div>
-
-<div id="tab-s" class="sec" style="display:none">
-  <div class="sw">
-    <span class="si">🔍</span>
-    <input id="sinp" type="text" class="sinp" placeholder="اكتب كلمة أو آية..." autocomplete="off" spellcheck="false" oninput="onSr()">
-    <button class="scl" id="scl" onclick="clrSr()">✕</button>
-  </div>
-  <div id="scnt" class="scnt"></div>
-  <div id="sRes"></div>
-</div>
-
-<div id="tab-b" class="sec" style="display:none"><div id="bCont"></div></div>
-<div id="tab-k" class="sec" style="display:none"><div id="kCont"></div></div>
-
-<div id="tab-r" class="sec" style="display:none">
-  <div class="rcard">
-    <div style="display:flex;align-items:center;gap:18px;margin-bottom:18px;flex-wrap:wrap">
-      <div style="text-align:center">
-        <div class="rav" id="ratAvg">—</div>
-        <div style="display:flex;gap:3px;justify-content:center;margin:4px 0" id="ratSB"></div>
-        <div class="rcnt" id="ratCnt">لا يوجد تقييمات بعد</div>
-      </div>
-      <div style="flex:1;min-width:180px" id="ratBars"></div>
-    </div>
-    <div style="text-align:center">
-      <button class="btng" style="padding:10px 28px" onclick="openRate()">⭐ قيّم الآن</button>
-    </div>
-  </div>
-  <div id="ratRevs"></div>
-</div>
-
-<footer>
-  <div class="fln"></div>
-  <div class="ftx">
-    صُنع بـ ❤️ بواسطة <strong style="color:var(--acc)">فيصل</strong><br>
-    <a href="/cdn-cgi/l/email-protection#0b6d6a62786a676767673a383e3c324b6c666a626725686466"><span class="__cf_email__" data-cfemail="4c2a2d253f2d202020207d7f797b750c2b212d2520622f2321">[email&#160;protected]</span></a>
-  </div>
-</footer>
-</div>
-
-<div class="bnav">
-  <button class="bnb on" id="bm" onclick="sTab('m')"><span class="bi">📖</span>المصحف</button>
-  <button class="bnb"    id="bs" onclick="sTab('s')"><span class="bi">🔍</span>البحث</button>
-  <button class="bnb"    id="bb" onclick="sTab('b')"><span class="bi">🔖</span>محفوظات</button>
-  <button class="bnb"    id="bk" onclick="sTab('k')"><span class="bi">🌙</span>الختمة</button>
-  <button class="bnb"    id="br" onclick="sTab('r')"><span class="bi">⭐</span>تقييمات</button>
-</div>
-
-<div id="ply" class="ply">
-  <div class="pmini" id="pmini">
-    <div class="pico pau" id="pIco">♪</div>
-    <div class="pinf"><div class="ptit" id="pTit">اضغط على أي آية للاستماع</div><div class="prec" id="pRec">—</div></div>
-    <div class="pexp">▼</div>
-    <div class="pcls" id="pCls">✕</div>
-  </div>
-  <div class="pbody">
-    <div class="pnvr">
-      <button class="pnb" onclick="navAy(-1)">▶ السابقة</button>
-      <button class="pnb" onclick="navAy(1)">التالية ◀</button>
-    </div>
-    <div id="tfTxt" class="tfbx">اضغط قارئاً للاستماع...</div>
-    <div class="rgrid" id="rGrid"></div>
-    <audio id="aud" controls onclick="event.stopPropagation()"></audio>
-  </div>
-</div>
-
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-/* ══ قائمة السور — مضمّنة لا تحتاج تحميل ══ */
+/* ══ قائمة السور ══ */
 const SLIST=[
   [1,'سُورَةُ ٱلْفَاتِحَةِ',7],[2,'سُورَةُ البَقَرَةِ',286],[3,'سُورَةُ آلِ عِمۡرَانَ',200],
   [4,'سُورَةُ النِّسَاءِ',176],[5,'سُورَةُ الْمَائِدَةِ',120],[6,'سُورَةُ الْأَنعَامِ',165],
@@ -535,7 +37,7 @@ const SLIST=[
   [103,'سُورَةُ العَصرِ',3],[104,'سُورَةُ الهُمَزَةِ',9],[105,'سُورَةُ الفِيلِ',5],
   [106,'سُورَةُ قُرَيشٍ',4],[107,'سُورَةُ المَاعُونِ',7],[108,'سُورَةُ الكَوثَرِ',3],
   [109,'سُورَةُ الكَافِرُونَ',6],[110,'سُورَةُ النَّصرِ',3],[111,'سُورَةُ المَسَدِ',5],
-  [112,'سُورَةُ الإِخلَاصِ',4],[113,'سُورَةُ الفَلَقِ',5],[114,'سُورَةُ النَّاسِ',6],
+  [112,'سُورَةُ الإِخلَاصِ',4],[113,'سُورَةُ الفَلَقِ',5],[114,'سُورَةُ النَّاسِ',6]
 ];
 
 const RC=[
@@ -550,7 +52,7 @@ const RC=[
   {id:'ar.shuraym',       n:'سعود الشريم'},
   {id:'ar.hanirifai',     n:'هاني الرفاعي'},
   {id:'ar.ibrahimakhbar', n:'إبراهيم الأخضر'},
-  {id:'ar.parhizgar',     n:'حسين العجمي'},
+  {id:'ar.parhizgar',     n:'حسين العجمي'}
 ];
 
 const PLANS=[
@@ -559,7 +61,7 @@ const PLANS=[
   {id:'60',days:60,pg:10,ico:'📖',nm:'شهران'},
   {id:'90',days:90,pg:7,ico:'📅',nm:'ثلاثة أشهر'},
   {id:'180',days:180,pg:4,ico:'🗓️',nm:'ستة أشهر'},
-  {id:'365',days:365,pg:2,ico:'🌟',nm:'سنة كاملة'},
+  {id:'365',days:365,pg:2,ico:'🌟',nm:'سنة كاملة'}
 ];
 
 const JUZ=['الجزء الأول','الجزء الثاني','الجزء الثالث','الجزء الرابع','الجزء الخامس','الجزء السادس','الجزء السابع','الجزء الثامن','الجزء التاسع','الجزء العاشر','الجزء الحادي عشر','الجزء الثاني عشر','الجزء الثالث عشر','الجزء الرابع عشر','الجزء الخامس عشر','الجزء السادس عشر','الجزء السابع عشر','الجزء الثامن عشر','الجزء التاسع عشر','الجزء العشرون','الجزء الحادي والعشرون','الجزء الثاني والعشرون','الجزء الثالث والعشرون','الجزء الرابع والعشرون','الجزء الخامس والعشرون','الجزء السادس والعشرون','الجزء السابع والعشرون','الجزء الثامن والعشرون','الجزء التاسع والعشرون','الجزء الثلاثون'];
@@ -705,7 +207,6 @@ window.goIdx=()=>{
 window.doJP=()=>{const v=parseInt(document.getElementById('jpI').value);if(!v||v<1||v>604){showT('⚠️ ١ إلى ٦٠٤');return;}document.getElementById('jpI').value='';gPg(v);};
 window.doJA=()=>{const v=parseInt(document.getElementById('jaI').value);if(!v||v<1||v>6236){showT('⚠️ ١ إلى ٦٢٣٦');return;}document.getElementById('jaI').value='';
   hlGN=v;
-  // احسب صفحة تقريبية ثم نعدّل
   const approxPage=Math.ceil(v/10.3);
   gPg(Math.min(Math.max(1,approxPage),604));
 };
@@ -724,7 +225,6 @@ async function actAy(gn,sn,an,sName,txt){
   document.querySelector(`[data-g="${gn}"]`)?.classList.add('phl');
   document.querySelectorAll('.rbtn').forEach(b=>b.classList.remove('pl','ld','er'));
   try{
-    // تفسير عربي: ar.muyassar | تفسير إنجليزي: en.maududi
     const [ar,en]=await Promise.all([
       fetch(`https://api.alquran.cloud/v1/ayah/${gn}/ar.muyassar`),
       fetch(`https://api.alquran.cloud/v1/ayah/${gn}/en.maududi`),
@@ -777,8 +277,7 @@ function closeP(){
 }
 function togExp(e){if(e.target.closest('#pCls')||e.target.closest('#aud'))return;document.getElementById('ply').classList.toggle('ex');}
 
-/* ══ SEARCH ══ */
-// إزالة التشكيل والتطبيع قبل البحث
+/* ══ SEARCH (محدث للبحث بدون حركات) ══ */
 function stripDiac(t){
   return t
     .replace(/[\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED]/g,'')
@@ -791,12 +290,10 @@ function stripDiac(t){
 
 function highlight(text,q){
   if(!q||!text)return text||'';
-  // قارن بعد إزالة التشكيل
   const cleanText=stripDiac(text);
   const cleanQ=stripDiac(q);
   const idx=cleanText.indexOf(cleanQ);
   if(idx<0)return text;
-  // ابحث عن الموقع الحقيقي في النص الأصلي
   let ri=0,ci=0;
   let start=-1,end=-1;
   while(ri<text.length&&ci<cleanText.length){
@@ -824,7 +321,8 @@ async function doSr(q){
   cd.textContent='';
   const cleanQ=stripDiac(q);
   try{
-    const res=await fetch(`https://api.alquran.cloud/v1/search/${encodeURIComponent(cleanQ)}/all/quran-uthmani`);
+    // تم التغيير إلى quran-simple-clean للبحث المباشر بدون حركات
+    const res=await fetch(`https://api.alquran.cloud/v1/search/${encodeURIComponent(cleanQ)}/all/quran-simple-clean`);
     const json=await res.json();
     const matches=json.data?.matches||[];
     if(!matches.length){rd.innerHTML=`<div class="se">لم يُعثر على نتائج لـ «${q}»</div>`;return;}
@@ -857,7 +355,7 @@ function renderBM(){
 }
 window.rmBM=i=>{BM.splice(i,1);localStorage.setItem('qBM',JSON.stringify(BM));if(window._u)syncUp(window._u.uid);renderBM();showT('🗑️ تم الحذف');};
 
-/* ══ KHATMA ══ */
+/* ══ KHATMA (تم إصلاح نظام تتبع الأيام) ══ */
 function renderKH(){
   const d=document.getElementById('kCont');if(!d)return;
   if(!KH?.active){d.innerHTML=`<div class="kcard"><div class="ktit">🌙 اختر خطة الختمة</div><div class="pgrid2">${PLANS.map((p,i)=>`<div class="pcard" style="animation-delay:${i*55}ms" onclick="startKH('${p.id}',${p.days},${p.pg})"><div class="pio">${p.ico}</div><div class="pnm2">${p.nm}</div><div class="pdt">${toAr(p.pg)} صفحة / يوم</div></div>`).join('')}</div></div>`;return;}
@@ -878,7 +376,6 @@ window.startKH=(id,days,pg)=>{KH={active:true,planId:id,days,pgDay:pg,startDate:
 window.mkDone=()=>{
   if(!KH)return;
   if(!Array.isArray(KH.dDone))KH.dDone=[];
-  // رقم اليوم = عدد الأيام المنجزة + 1
   const nextDay=KH.dDone.length+1;
   if(!KH.dDone.includes(nextDay))KH.dDone.push(nextDay);
   KH.curPg=Math.min((KH.curPg||1)+KH.pgDay,605);
@@ -933,9 +430,7 @@ window.doLogin=async()=>{
 };
 window.doLogout=async()=>{if(fbOK)await fbAuth.signOut();showT('تم تسجيل الخروج');};
 
-/* ✅ دالة موحّدة لتحديث الصورة في كل مكان */
 function setAvatar(src){
-  // الشريط العلوي
   const ae=document.getElementById('aAvE'),ai=document.getElementById('aAvI'),aw=document.getElementById('aAvW');
   if(src){
     if(ai){ai.src=src;ai.style.display='block';}
@@ -946,7 +441,6 @@ function setAvatar(src){
     if(ae)ae.style.display='';
     if(aw)aw.classList.remove('has');
   }
-  // مودال الملف الشخصي
   const pi=document.getElementById('pavI'),pe=document.getElementById('pavE');
   if(src){
     if(pi){pi.src=src;pi.style.display='block';}
@@ -966,10 +460,8 @@ function updUI(u){
     if(CF.username) sb.innerHTML=`<span style="direction:ltr;unicode-bidi:embed;font-family:monospace">@${CF.username}</span>`;
     else sb.textContent=u.email||'';
     if(bt)bt.textContent='👤 ملفي';
-    // الصورة المحفوظة أولوية على صورة Google
     const saved=localStorage.getItem('qAv');
     setAvatar(saved||u.photoURL||null);
-    // ملء المودال
     document.getElementById('pDN').textContent=dn;
     document.getElementById('pEM').textContent=u.email||'';
     document.getElementById('pUN').textContent=CF.username?'@'+CF.username:'';
@@ -1128,10 +620,9 @@ renderGrid();
 renderBM();
 renderKH();
 renderRatLocal();
-// الصورة المحفوظة
 const savedAv=localStorage.getItem('qAv');if(savedAv)setAvatar(savedAv);
 
-// Firebase بعد ثانية — لا يوقف الموقع
+/* 🔥 Firebase (تم الإصلاح ليعمل بدون مشاكل تعليق) 🔥 */
 setTimeout(()=>{
   const s1=document.createElement('script');
   s1.src='https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js';
@@ -1140,4 +631,13 @@ setTimeout(()=>{
     s2.src='https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js';
     s2.onload=()=>{
       const s3=document.createElement('script');
-      s3.s
+      s3.src='https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js';
+      s3.onload=()=>{
+        initFB();
+      };
+      document.head.appendChild(s3);
+    };
+    document.head.appendChild(s2);
+  };
+  document.head.appendChild(s1);
+},1000);
