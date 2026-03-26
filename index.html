@@ -614,7 +614,7 @@ async function loadQuran() {
   // ٢. حمّل من quran.json المحلي (موجود في نفس المجلد على GitHub)
   document.getElementById('lsS').textContent = 'جاري تحميل القرآن...';
   try {
-    const res = await fetch('quran.json');
+    const res = await fetch('./quran.json');
     if (res.ok) {
       const json = await res.json();
       const data = json.data.surahs;
