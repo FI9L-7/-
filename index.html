@@ -464,7 +464,7 @@ footer{text-align:center;padding:26px 16px 10px;border-top:1px solid var(--brd);
   <div class="fln"></div>
   <div class="ftx">
     صُنع بـ ❤️ بواسطة <strong style="color:var(--acc)">فيصل</strong><br>
-    <a href="mailto:faisallll13579@gmail.com">faisallll13579@gmail.com</a>
+    <a href="/cdn-cgi/l/email-protection#0b6d6a62786a676767673a383e3c324b6c666a626725686466"><span class="__cf_email__" data-cfemail="4c2a2d253f2d202020207d7f797b750c2b212d2520622f2321">[email&#160;protected]</span></a>
   </div>
 </footer>
 </div>
@@ -495,7 +495,7 @@ footer{text-align:center;padding:26px 16px 10px;border-top:1px solid var(--brd);
   </div>
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 /* ══ قائمة السور — مضمّنة لا تحتاج تحميل ══ */
 const SLIST=[
   [1,'سُورَةُ ٱلْفَاتِحَةِ',7],[2,'سُورَةُ البَقَرَةِ',286],[3,'سُورَةُ آلِ عِمۡرَانَ',200],
@@ -778,12 +778,35 @@ function closeP(){
 function togExp(e){if(e.target.closest('#pCls')||e.target.closest('#aud'))return;document.getElementById('ply').classList.toggle('ex');}
 
 /* ══ SEARCH ══ */
-// دالة تمييز كلمة في نص
+// إزالة التشكيل والتطبيع قبل البحث
+function stripDiac(t){
+  return t
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED]/g,'')
+    .replace(/[أإآٱ]/g,'ا')
+    .replace(/ة/g,'ه')
+    .replace(/ى/g,'ي')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+
 function highlight(text,q){
   if(!q||!text)return text||'';
-  const escaped=q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-  const re=new RegExp(`(${escaped})`, 'g');
-  return text.replace(re,'<mark>$1</mark>');
+  // قارن بعد إزالة التشكيل
+  const cleanText=stripDiac(text);
+  const cleanQ=stripDiac(q);
+  const idx=cleanText.indexOf(cleanQ);
+  if(idx<0)return text;
+  // ابحث عن الموقع الحقيقي في النص الأصلي
+  let ri=0,ci=0;
+  let start=-1,end=-1;
+  while(ri<text.length&&ci<cleanText.length){
+    if(ci===idx)start=ri;
+    if(ci===idx+cleanQ.length){end=ri;break;}
+    ri++;ci++;
+  }
+  if(end<0)end=text.length;
+  if(start<0)return text;
+  return text.slice(0,start)+'<mark>'+text.slice(start,end)+'</mark>'+text.slice(end);
 }
 
 function onSr(){
@@ -799,18 +822,17 @@ async function doSr(q){
   const rd=document.getElementById('sRes'),cd=document.getElementById('scnt');
   rd.innerHTML=`<div class="pgload"><div class="sp"></div><span>جاري البحث...</span></div>`;
   cd.textContent='';
+  const cleanQ=stripDiac(q);
   try{
-    // نستخدم النص العثماني
-    const res=await fetch(`https://api.alquran.cloud/v1/search/${encodeURIComponent(q)}/all/quran-uthmani`);
+    const res=await fetch(`https://api.alquran.cloud/v1/search/${encodeURIComponent(cleanQ)}/all/quran-uthmani`);
     const json=await res.json();
     const matches=json.data?.matches||[];
     if(!matches.length){rd.innerHTML=`<div class="se">لم يُعثر على نتائج لـ «${q}»</div>`;return;}
     cd.textContent=`${matches.length} نتيجة`;
     rd.innerHTML='';
     matches.slice(0,25).forEach((m,i)=>{
-      if(typeof m.text!=='string')return; // تخطي إذا لم يكن نصاً
+      if(typeof m.text!=='string')return;
       const d=document.createElement('div');d.className='rc';d.style.animationDelay=`${i*25}ms`;
-      // نص الآية مع تمييز كلمة البحث
       const hlTxt=highlight(m.text,q);
       d.innerHTML=`<div class="rm">سورة ${m.surah?.name||''} • الآية ${toAr(m.numberInSurah||0)} • صفحة ${toAr(m.page||0)}</div><div class="rt">${hlTxt}</div>`;
       d.onclick=()=>{sTab('m');hlGN=m.number;gPg(m.page);};
@@ -843,11 +865,25 @@ function renderKH(){
   const dn=Math.floor((Date.now()-new Date(KH.startDate))/86400000),cd=Math.min(dn,KH.days-1);
   const dp=KH.curPg||1,pct=Math.min(Math.round(((dp-1)/604)*100),100),isDone=dp>604;
   const te=Math.min(dp+KH.pgDay-1,604);
-  const dots=Array.from({length:Math.min(KH.days,40)},(_,i)=>{const n=i+1,done=Array.isArray(KH.dDone)&&KH.dDone.includes(n),today=n===cd+1;return `<div class="dot ${done?'done':''} ${today&&!done?'today':''}">${toAr(n)}</div>`;}).join('');
+  const completedDays=Array.isArray(KH.dDone)?KH.dDone.length:0;
+  const dots=Array.from({length:Math.min(KH.days,40)},(_,i)=>{
+    const n=i+1;
+    const done=Array.isArray(KH.dDone)&&KH.dDone.includes(n);
+    const today=n===completedDays+1&&!isDone;
+    return `<div class="dot ${done?'done':''} ${today?'today':''}">${toAr(n)}</div>`;
+  }).join('');
   d.innerHTML=`<div class="kcard"><div class="ktit">${plan.ico} ${plan.nm} — اليوم ${toAr(cd+1)}</div><div class="pbw"><div class="pbf" style="width:${pct}%"></div></div><div class="pbl"><span>صفحة ${toAr(dp)} من ٦٠٤</span><span>${toAr(pct)}٪</span></div>${!isDone?`<div class="tdc"><div class="tdl">📖 قراءة اليوم</div><div class="tdr">من صفحة ${toAr(dp)} إلى صفحة ${toAr(te)}</div><div class="ka"><button class="kb kb-p" onclick="sTab('m');gPg(${dp})">ابدأ القراءة</button><button class="kb kb-g" onclick="mkDone()">✓ أنهيت اليوم</button></div></div>`:'<div style="text-align:center;font-size:1.4rem;padding:20px">🎉 الحمد لله!</div>'}<div class="ka" style="margin-top:14px">${KH.lastPage?`<button class="kb kb-p" onclick="sTab('m');gPg(${KH.lastPage})">متابعة من آخر موضع</button>`:''}<button class="kb kb-s" onclick="rstKH()">إعادة الختمة</button></div></div><div class="kcard"><div class="ktit">📅 سجل الأيام</div><div class="ddots">${dots}</div></div>`;
 }
 window.startKH=(id,days,pg)=>{KH={active:true,planId:id,days,pgDay:pg,startDate:new Date().toISOString(),curPg:1,dDone:[],lastPage:null};saveKH();renderKH();showT('🌙 بدأت الختمة!');};
-window.mkDone=()=>{if(!KH)return;const dn=Math.floor((Date.now()-new Date(KH.startDate))/86400000)+1;if(!Array.isArray(KH.dDone))KH.dDone=[];if(!KH.dDone.includes(dn))KH.dDone.push(dn);KH.curPg=Math.min((KH.curPg||1)+KH.pgDay,605);saveKH();renderKH();showT('✅ أحسنت!');};
+window.mkDone=()=>{
+  if(!KH)return;
+  if(!Array.isArray(KH.dDone))KH.dDone=[];
+  // رقم اليوم = عدد الأيام المنجزة + 1
+  const nextDay=KH.dDone.length+1;
+  if(!KH.dDone.includes(nextDay))KH.dDone.push(nextDay);
+  KH.curPg=Math.min((KH.curPg||1)+KH.pgDay,605);
+  saveKH();renderKH();showT('✅ أحسنت! اليوم '+toAr(nextDay)+' مكتمل');
+};
 window.rstKH=()=>{if(!confirm('إعادة الختمة؟'))return;KH=null;localStorage.removeItem('qKH');renderKH();showT('تمت الإعادة');};
 function saveKH(){localStorage.setItem('qKH',JSON.stringify(KH));if(window._u)syncUp(window._u.uid);}
 
@@ -1104,14 +1140,4 @@ setTimeout(()=>{
     s2.src='https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js';
     s2.onload=()=>{
       const s3=document.createElement('script');
-      s3.src='https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js';
-      s3.onload=initFB;
-      document.head.appendChild(s3);
-    };
-    document.head.appendChild(s2);
-  };
-  document.head.appendChild(s1);
-},800);
-</script>
-</body>
-</html>
+      s3.s
