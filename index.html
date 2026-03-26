@@ -496,7 +496,20 @@ footer{text-align:center;padding:26px 16px 10px;border-top:1px solid var(--brd);
 </div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-/* ══ قائمة السور — مضمّنة لا تحتاج تحميل ══ */
+/* ✅ تعريف sTab مبكراً قبل أي شيء — يمنع خطأ "sTab is not defined" */
+window.sTab=function(t){
+  try{
+    ['m','s','b','k','r'].forEach(x=>{
+      const tab=document.getElementById('tab-'+x);
+      if(tab)tab.style.display=x===t?'block':'none';
+      document.getElementById('t'+x)?.classList.toggle('on',x===t);
+      document.getElementById('b'+x)?.classList.toggle('on',x===t);
+    });
+    if(t==='b'&&window.renderBM)renderBM();
+    if(t==='k'&&window.renderKH)renderKH();
+    if(t==='r'&&window.loadRat)loadRat();
+  }catch(e){console.warn('sTab error:',e);}
+};
 const SLIST=[
   [1,'سُورَةُ ٱلْفَاتِحَةِ',7],[2,'سُورَةُ البَقَرَةِ',286],[3,'سُورَةُ آلِ عِمۡرَانَ',200],
   [4,'سُورَةُ النِّسَاءِ',176],[5,'سُورَةُ الْمَائِدَةِ',120],[6,'سُورَةُ الْأَنعَامِ',165],
@@ -866,11 +879,12 @@ function renderKH(){
   const dp=KH.curPg||1,pct=Math.min(Math.round(((dp-1)/604)*100),100),isDone=dp>604;
   const te=Math.min(dp+KH.pgDay-1,604);
   const completedDays=Array.isArray(KH.dDone)?KH.dDone.length:0;
-  const dots=Array.from({length:Math.min(KH.days,40)},(_,i)=>{
+  const totalDots=Math.min(KH.days,60);
+  const dots=Array.from({length:totalDots},(_,i)=>{
     const n=i+1;
     const done=Array.isArray(KH.dDone)&&KH.dDone.includes(n);
-    const today=n===completedDays+1&&!isDone;
-    return `<div class="dot ${done?'done':''} ${today?'today':''}">${toAr(n)}</div>`;
+    const today=!isDone&&n===completedDays+1;
+    return `<div class="dot ${done?'done':''} ${today?'today':''}" title="اليوم ${n}">${toAr(n)}</div>`;
   }).join('');
   d.innerHTML=`<div class="kcard"><div class="ktit">${plan.ico} ${plan.nm} — اليوم ${toAr(cd+1)}</div><div class="pbw"><div class="pbf" style="width:${pct}%"></div></div><div class="pbl"><span>صفحة ${toAr(dp)} من ٦٠٤</span><span>${toAr(pct)}٪</span></div>${!isDone?`<div class="tdc"><div class="tdl">📖 قراءة اليوم</div><div class="tdr">من صفحة ${toAr(dp)} إلى صفحة ${toAr(te)}</div><div class="ka"><button class="kb kb-p" onclick="sTab('m');gPg(${dp})">ابدأ القراءة</button><button class="kb kb-g" onclick="mkDone()">✓ أنهيت اليوم</button></div></div>`:'<div style="text-align:center;font-size:1.4rem;padding:20px">🎉 الحمد لله!</div>'}<div class="ka" style="margin-top:14px">${KH.lastPage?`<button class="kb kb-p" onclick="sTab('m');gPg(${KH.lastPage})">متابعة من آخر موضع</button>`:''}<button class="kb kb-s" onclick="rstKH()">إعادة الختمة</button></div></div><div class="kcard"><div class="ktit">📅 سجل الأيام</div><div class="ddots">${dots}</div></div>`;
 }
@@ -878,11 +892,13 @@ window.startKH=(id,days,pg)=>{KH={active:true,planId:id,days,pgDay:pg,startDate:
 window.mkDone=()=>{
   if(!KH)return;
   if(!Array.isArray(KH.dDone))KH.dDone=[];
-  // رقم اليوم = عدد الأيام المنجزة + 1
   const nextDay=KH.dDone.length+1;
-  if(!KH.dDone.includes(nextDay))KH.dDone.push(nextDay);
+  if(nextDay>KH.days){showT('🎉 أتممت الختمة!');return;}
+  KH.dDone.push(nextDay);
   KH.curPg=Math.min((KH.curPg||1)+KH.pgDay,605);
-  saveKH();renderKH();showT('✅ أحسنت! اليوم '+toAr(nextDay)+' مكتمل');
+  saveKH();
+  renderKH();
+  showT('✅ أحسنت! اليوم '+toAr(nextDay)+' مكتمل ✓');
 };
 window.rstKH=()=>{if(!confirm('إعادة الختمة؟'))return;KH=null;localStorage.removeItem('qKH');renderKH();showT('تمت الإعادة');};
 function saveKH(){localStorage.setItem('qKH',JSON.stringify(KH));if(window._u)syncUp(window._u.uid);}
@@ -1030,7 +1046,7 @@ window.savePro=async()=>{
 };
 
 /* AVATAR */
-document.getElementById('avFile').addEventListener('change',e=>{
+document.getElementById('avFile')?.addEventListener('change',e=>{
   const f=e.target.files[0];if(!f)return;e.target.value='';
   const r=new FileReader();
   r.onload=ev=>{
@@ -1091,47 +1107,48 @@ window.setF=sz=>{document.body.classList.remove('fsm','flg');if(sz!=='md')docume
 window.openSets=()=>document.getElementById('sOvl').classList.add('op');
 window.closeSets=()=>document.getElementById('sOvl').classList.remove('op');
 
-/* TABS */
-window.sTab=t=>{
-  ['m','s','b','k','r'].forEach(x=>{
-    document.getElementById('tab-'+x).style.display=x===t?'block':'none';
-    document.getElementById('t'+x)?.classList.toggle('on',x===t);
-    document.getElementById('b'+x)?.classList.toggle('on',x===t);
-  });
-  if(t==='b')renderBM();if(t==='k')renderKH();if(t==='r')loadRat();
-};
+/* TABS - معرّفة مبكراً في أعلى السكريبت */
 
 /* TOAST */
 function showT(msg){document.querySelector('.toast')?.remove();const e=document.createElement('div');e.className='toast';e.textContent=msg;document.body.appendChild(e);setTimeout(()=>e.remove(),3200);}
 
 /* ══ START ══ */
-document.getElementById('setBtn').addEventListener('click',openSets);
-document.getElementById('pCls').addEventListener('click',e=>{e.stopPropagation();closeP();});
-document.getElementById('pmini').addEventListener('click',togExp);
-document.getElementById('btnN1').addEventListener('click',()=>gPg(curPg+1));
-document.getElementById('btnN2').addEventListener('click',()=>gPg(curPg+1));
-document.getElementById('btnP2').addEventListener('click',()=>gPg(curPg-1));
-document.getElementById('thT').addEventListener('change',togTh);
-document.getElementById('htT').addEventListener('change',function(){sav('hideTafsir',this.checked);});
-document.getElementById('apT').addEventListener('change',function(){sav('autoPlay',this.checked);});
-document.getElementById('jpI').addEventListener('keydown',e=>{if(e.key==='Enter')doJP();});
-document.getElementById('jaI').addEventListener('keydown',e=>{if(e.key==='Enter')doJA();});
-document.addEventListener('contextmenu',e=>{
-  const sp=e.target.closest('.ayah');if(!sp)return;e.preventDefault();
-  bmTog(+sp.dataset.g,+sp.dataset.s,+sp.dataset.a,SLIST[+sp.dataset.s-1]?.[1]||'',sp.textContent.slice(0,-3).trim(),+sp.dataset.p,sp);
-},true);
+try{
+  document.getElementById('setBtn')?.addEventListener('click',openSets);
+  document.getElementById('pCls')?.addEventListener('click',e=>{e.stopPropagation();closeP();});
+  document.getElementById('pmini')?.addEventListener('click',togExp);
+  document.getElementById('btnN1')?.addEventListener('click',()=>gPg(curPg+1));
+  document.getElementById('btnN2')?.addEventListener('click',()=>gPg(curPg+1));
+  document.getElementById('btnP2')?.addEventListener('click',()=>gPg(curPg-1));
+  document.getElementById('thT')?.addEventListener('change',togTh);
+  document.getElementById('htT')?.addEventListener('change',function(){sav('hideTafsir',this.checked);});
+  document.getElementById('apT')?.addEventListener('change',function(){sav('autoPlay',this.checked);});
+  document.getElementById('jpI')?.addEventListener('keydown',e=>{if(e.key==='Enter')doJP();});
+  document.getElementById('jaI')?.addEventListener('keydown',e=>{if(e.key==='Enter')doJA();});
+  document.getElementById('avFile')?.addEventListener('change',e=>{
+    const f=e.target.files[0];if(!f)return;e.target.value='';
+    const r=new FileReader();
+    r.onload=ev=>{
+      const url=ev.target.result;
+      try{localStorage.setItem('qAv',url);}catch(err){showT('⚠️ الصورة كبيرة جداً');return;}
+      setAvatar(url);showT('✅ تم تحديث الصورة');
+    };
+    r.readAsDataURL(f);
+  });
+  document.addEventListener('contextmenu',e=>{
+    const sp=e.target.closest('.ayah');if(!sp)return;e.preventDefault();
+    bmTog(+sp.dataset.g,+sp.dataset.s,+sp.dataset.a,SLIST[+sp.dataset.s-1]?.[1]||'',sp.textContent.slice(0,-3).trim(),+sp.dataset.p,sp);
+  },true);
+  applyCF();
+  buildR();
+  renderGrid();
+  renderBM();
+  renderKH();
+  renderRatLocal();
+  const savedAv=localStorage.getItem('qAv');if(savedAv)setAvatar(savedAv);
+}catch(e){console.error('Init error:',e);}
 
-// تشغيل فوري
-applyCF();
-buildR();
-renderGrid();
-renderBM();
-renderKH();
-renderRatLocal();
-// الصورة المحفوظة
-const savedAv=localStorage.getItem('qAv');if(savedAv)setAvatar(savedAv);
-
-// Firebase بعد ثانية — لا يوقف الموقع
+// Firebase بعد ٨٠٠ms — لا يوقف الموقع أبداً
 setTimeout(()=>{
   const s1=document.createElement('script');
   s1.src='https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js';
@@ -1140,4 +1157,14 @@ setTimeout(()=>{
     s2.src='https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js';
     s2.onload=()=>{
       const s3=document.createElement('script');
-      s3.s
+      s3.src='https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js';
+      s3.onload=initFB;
+      document.head.appendChild(s3);
+    };
+    document.head.appendChild(s2);
+  };
+  document.head.appendChild(s1);
+},800);
+</script>
+</body>
+</html>
