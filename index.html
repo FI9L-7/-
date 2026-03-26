@@ -668,13 +668,12 @@ function buildIndex(surahs) {
 }
 
 /* ══ INIT ══ */
-window.addEventListener('DOMContentLoaded', () => {
+function startApp() {
   applyCF();
   buildR();
   renderBM();
   renderKH();
   loadAv();
-  // wire events
   document.getElementById('setBtn').addEventListener('click', openSets);
   document.getElementById('pCls').addEventListener('click', e=>{e.stopPropagation();closeP();});
   document.getElementById('pmini').addEventListener('click', togExp);
@@ -693,10 +692,11 @@ window.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     const a=AY.find(x=>x.gNum===+sp.dataset.g); if(a) bmTog(a,sp);
   }, true);
-
-  // حمّل القرآن من API
   loadQuran();
-});
+}
+
+// يشتغل فوراً لأن الكود في آخر الصفحة بعد كل العناصر
+startApp();
 
 function finishInit() {
   renderGrid();
