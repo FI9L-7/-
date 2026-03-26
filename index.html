@@ -507,6 +507,28 @@ footer{text-align:center;padding:26px 16px 10px;border-top:1px solid var(--brd);
 </div>
 
 <!-- Firebase async - لا تعلّق الصفحة -->
+<script>
+// يجب تعريف fbLoaded قبل تحميل Firebase
+function fbLoaded() {
+  setTimeout(() => {
+    try {
+      const FB_CFG = {
+        apiKey:"AIzaSyAhsM5x8dmgabRDdbY1RRRe3PFlubIKKog",
+        authDomain:"logen-93cfd.firebaseapp.com",
+        projectId:"logen-93cfd",
+        storageBucket:"logen-93cfd.firebasestorage.app",
+        messagingSenderId:"1034179807516",
+        appId:"1:1034179807516:web:4c74c5bf6e08a9347c12d9",
+      };
+      if(!firebase.apps.length) firebase.initializeApp(FB_CFG);
+      window.window.fbAuth = firebase.auth();
+      window.window.fbDB   = firebase.firestore();
+      window.window.fbOK   = true;
+      window.window.fbAuth.onAuthStateChanged(u => { window._u=u; updAuthUI(u); if(u) syncDown(u.uid); });
+    } catch(e) { console.warn('Firebase:', e.message); }
+  }, 800);
+}
+</script>
 <script async src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js" onload="fbLoaded()"></script>
 <script async src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script async src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -560,29 +582,8 @@ let CF  = JSON.parse(localStorage.getItem('qCF')||'{}');
 let srt=null, unT=null, selStar=0, fData=[];
 
 /* ══ FIREBASE ══ */
-const FB_CFG = {
-  apiKey:"AIzaSyAhsM5x8dmgabRDdbY1RRRe3PFlubIKKog",
-  authDomain:"logen-93cfd.firebaseapp.com",
-  projectId:"logen-93cfd",
-  storageBucket:"logen-93cfd.firebasestorage.app",
-  messagingSenderId:"1034179807516",
-  appId:"1:1034179807516:web:4c74c5bf6e08a9347c12d9",
-};
-let fbAuth, fbDB, fbOK=false;
-
-// يُستدعى تلقائياً لما Firebase ينتهي من التحميل
-function fbLoaded() {
-  // انتظر قليلاً حتى تنتهي ملفات auth و firestore
-  setTimeout(() => {
-    try {
-      if(!firebase.apps.length) firebase.initializeApp(FB_CFG);
-      fbAuth = firebase.auth();
-      fbDB   = firebase.firestore();
-      fbOK   = true;
-      fbAuth.onAuthStateChanged(u => { window._u=u; updAuthUI(u); if(u) syncDown(u.uid); });
-    } catch(e) { console.warn('Firebase:', e.message); }
-  }, 500);
-}
+let window.fbAuth, window.fbDB, window.fbOK=false;
+// Firebase يُهيَّأ في fbLoaded() أعلاه
 
 /* ══ TEXT UTILS ══ */
 const DC  = /[\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED\uFE70-\uFEFF\u200C-\u200F]/g;
@@ -936,8 +937,8 @@ function saveKH(){ localStorage.setItem('qKH',JSON.stringify(KH)); if(window._u)
 let myRat=JSON.parse(localStorage.getItem('qMyRat')||'null');
 async function loadRatings(){
   renderRatLocal();
-  if(!fbOK)return;
-  try{ const snap=await fbDB.collection('ratings').get(); const all=[]; snap.forEach(d=>all.push(d.data())); if(all.length)renderRatings(all); }catch(e){}
+  if(!window.fbOK)return;
+  try{ const snap=await window.fbDB.collection('ratings').get(); const all=[]; snap.forEach(d=>all.push(d.data())); if(all.length)renderRatings(all); }catch(e){}
 }
 function renderRatLocal(){
   const avgEl=document.getElementById('ratAvg'),cntEl=document.getElementById('ratCount');
@@ -968,17 +969,17 @@ window.submitRating=async()=>{
   const displayName=CF.displayName||window._u?.displayName||'مستخدم';
   const rat={stars:selStar,comment,displayName,ts:Date.now(),uid};
   myRat=rat; localStorage.setItem('qMyRat',JSON.stringify(rat));
-  if(fbOK){ try{await fbDB.collection('ratings').doc(uid).set(rat);}catch(e){} }
+  if(window.fbOK){ try{await window.fbDB.collection('ratings').doc(uid).set(rat);}catch(e){} }
   closeRate(); showT('✅ شكراً على تقييمك!'); loadRatings();
 };
 
 /* ══ AUTH + PROFILE ══ */
 window.loginGoogle=async()=>{
-  if(!fbOK){showT('⚠️ تعذّر الاتصال');return;}
-  try{ await fbAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+  if(!window.fbOK){showT('⚠️ تعذّر الاتصال');return;}
+  try{ await window.fbAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
   catch(e){ showT('⚠️ فشل تسجيل الدخول'); }
 };
-window.logoutUser=async()=>{ if(fbOK)await fbAuth.signOut(); showT('تم تسجيل الخروج'); };
+window.logoutUser=async()=>{ if(window.fbOK)await window.fbAuth.signOut(); showT('تم تسجيل الخروج'); };
 
 function updAuthUI(u) {
   const av=document.getElementById('aAv'), ai=document.getElementById('aAvImg');
@@ -1027,8 +1028,8 @@ window.chkUN=()=>{
   if(v===CF.username){st.className='uns ok';st.textContent='✓ يوزرك الحالي';return;}
   st.className='uns ck';st.textContent='⏳ جاري التحقق...';
   unT=setTimeout(async()=>{
-    if(!fbOK){st.className='uns er';st.textContent='⚠️ غير متصل';return;}
-    const s=await fbDB.collection('usernames').doc(v).get();
+    if(!window.fbOK){st.className='uns er';st.textContent='⚠️ غير متصل';return;}
+    const s=await window.fbDB.collection('usernames').doc(v).get();
     st.className=s.exists?'uns er':'uns ok';
     st.textContent=s.exists?'✗ محجوز':'✓ متاح!';
   },700);
@@ -1043,9 +1044,9 @@ window.savePro=async()=>{
   if(un&&un.length<3){showT('⚠️ اليوزر ٣ أحرف على الأقل');return;}
   if(un&&st.classList.contains('er')){showT('⚠️ هذا اليوزر محجوز');return;}
   try{
-    if(un&&un!==CF.username&&fbOK){
-      if(CF.username) await fbDB.collection('usernames').doc(CF.username).delete().catch(()=>{});
-      await fbDB.collection('usernames').doc(un).set({uid:u.uid,displayName:nm||u.displayName||''});
+    if(un&&un!==CF.username&&window.fbOK){
+      if(CF.username) await window.fbDB.collection('usernames').doc(CF.username).delete().catch(()=>{});
+      await window.fbDB.collection('usernames').doc(un).set({uid:u.uid,displayName:nm||u.displayName||''});
     }
     CF.displayName=nm||u.displayName||'';
     CF.username=un||CF.username||'';
@@ -1088,17 +1089,17 @@ function loadAv(){
 window.addFriend=async()=>{
   const un=document.getElementById('fUI').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'');
   if(!un||un.length<3){showT('⚠️ أدخل يوزر صحيح');return;}
-  if(!fbOK||!window._u){showT('⚠️ سجّل دخولك أولاً');return;}
+  if(!window.fbOK||!window._u){showT('⚠️ سجّل دخولك أولاً');return;}
   if(fData.some(f=>f.username===un)){showT('⚠️ موجود بالفعل');return;}
   try{
-    const sn=await fbDB.collection('usernames').doc(un).get();
+    const sn=await window.fbDB.collection('usernames').doc(un).get();
     if(!sn.exists){showT('⚠️ لم يُعثر على هذا اليوزر');return;}
     const {uid}=sn.data();
-    const us=await fbDB.collection('users').doc(uid).get();
+    const us=await window.fbDB.collection('users').doc(uid).get();
     const kh=us.data()?.khatma,pr=us.data()?.khatmaPrivacy||'public';
     const pct=(kh&&pr==='public')?Math.min(Math.round(((kh.curPg||1)-1)/604*100),100):null;
     fData.push({username:un,displayName:sn.data().displayName||un,pct});
-    await fbDB.collection('users').doc(window._u.uid).set({friends:fData},{merge:true});
+    await window.fbDB.collection('users').doc(window._u.uid).set({friends:fData},{merge:true});
     document.getElementById('fUI').value=''; renderFriends(); showT('✅ تمت الإضافة');
   }catch(e){showT('⚠️ '+e.message);}
 };
@@ -1107,14 +1108,14 @@ function renderFriends(){
   if(!fData.length){el.innerHTML='<div style="text-align:center;color:var(--txt3);font-size:.78rem;padding:10px 0">لا يوجد أصدقاء بعد</div>';return;}
   el.innerHTML=fData.map((f,i)=>`<div class="fi"><div class="fav">👤</div><div style="flex:1;min-width:0"><div style="font-size:.82rem;font-weight:700;color:var(--txt)">${f.displayName}</div><div style="font-size:.68rem;color:var(--acc);direction:ltr;unicode-bidi:embed;font-family:monospace">@${f.username}</div><div style="font-size:.68rem;color:var(--txt3)">${f.pct!=null?f.pct+'٪ ختمة':'🔒 خاص'}</div></div><button class="fdl" onclick="remFriend(${i})">✕</button></div>`).join('');
 }
-window.remFriend=async(i)=>{ fData.splice(i,1); if(fbOK&&window._u)await fbDB.collection('users').doc(window._u.uid).set({friends:fData},{merge:true}); renderFriends(); showT('🗑️ تم الحذف'); };
+window.remFriend=async(i)=>{ fData.splice(i,1); if(window.fbOK&&window._u)await window.fbDB.collection('users').doc(window._u.uid).set({friends:fData},{merge:true}); renderFriends(); showT('🗑️ تم الحذف'); };
 
 /* ══ SYNC ══ */
 async function syncUp(uid){
-  if(!fbOK||!uid)return;
+  if(!window.fbOK||!uid)return;
   try{
     const u=window._u;
-    await fbDB.collection('users').doc(uid).set({
+    await window.fbDB.collection('users').doc(uid).set({
       bookmarks:JSON.parse(localStorage.getItem('qBM')||'[]'),
       khatma:JSON.parse(localStorage.getItem('qKH')||'null'),
       displayName:CF.displayName||u?.displayName||'',
@@ -1126,9 +1127,9 @@ async function syncUp(uid){
   }catch(e){console.warn(e);}
 }
 async function syncDown(uid){
-  if(!fbOK||!uid)return;
+  if(!window.fbOK||!uid)return;
   try{
-    const s=await fbDB.collection('users').doc(uid).get();
+    const s=await window.fbDB.collection('users').doc(uid).get();
     if(s.exists){
       const d=s.data();
       if(d.bookmarks){localStorage.setItem('qBM',JSON.stringify(d.bookmarks));BM=d.bookmarks;}
