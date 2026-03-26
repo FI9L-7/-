@@ -610,35 +610,40 @@ function mkHL(orig,cqC){
 /* ══ LOAD QURAN (API + Cache) ══ */
 async function loadQuran() {
   const lsS = document.getElementById('lsS');
+  lsS.textContent = 'جاري تحميل القرآن...';
 
-  // ١. جرّب الكاش
+  // امسح الكاش القديم دائماً ثم أعد بناءه
+  let surahs = null;
+
+  // ١. جرّب الكاش فقط إذا كان سليماً
   try {
     const cached = localStorage.getItem(CACHE_KEY);
     if (cached) {
       const obj = JSON.parse(cached);
-      if (obj.ver === CACHE_VER && Array.isArray(obj.data) && obj.data.length > 0) {
+      if (obj && obj.ver === CACHE_VER && Array.isArray(obj.data) && obj.data.length === 114) {
         lsS.textContent = 'جاري بناء الفهرس...';
         buildIndex(obj.data);
         return;
+      } else {
+        localStorage.removeItem(CACHE_KEY);
       }
     }
   } catch(e) {
-    localStorage.removeItem(CACHE_KEY); // امسح الكاش الفاسد
+    localStorage.removeItem(CACHE_KEY);
   }
 
-  // ٢. حمّل من quran.json
-  lsS.textContent = 'جاري تحميل القرآن...';
-  let surahs = null;
+  // ٢. quran.json
   try {
+    lsS.textContent = 'جاري تحميل الملف...';
     const res = await fetch('./quran.json');
     if (res.ok) {
       lsS.textContent = 'جاري معالجة البيانات...';
       const json = await res.json();
-      surahs = json.data?.surahs;
+      surahs = json.data?.surahs || json.surahs;
     }
-  } catch(e) { /* سيجرب الـ API */ }
+  } catch(e) { console.warn('quran.json failed:', e); }
 
-  // ٣. fallback: API
+  // ٣. API
   if (!surahs) {
     try {
       lsS.textContent = 'جاري التحميل من الإنترنت...';
@@ -647,18 +652,17 @@ async function loadQuran() {
         const json = await res.json();
         surahs = json.data?.surahs;
       }
-    } catch(e) { /* فشل الـ API أيضاً */ }
+    } catch(e) { console.warn('API failed:', e); }
   }
 
   if (!surahs || surahs.length === 0) {
-    lsS.textContent = '⚠️ تعذّر التحميل — تحقق من الاتصال';
+    lsS.textContent = '⚠️ تعذّر التحميل';
     return;
   }
 
-  // احفظ في الكاش
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify({ ver: CACHE_VER, data: surahs }));
-  } catch(e) { /* الكاش ممتلئ — لا بأس */ }
+  } catch(e) {}
 
   lsS.textContent = 'جاري بناء الفهرس...';
   buildIndex(surahs);
