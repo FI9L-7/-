@@ -506,10 +506,10 @@ footer{text-align:center;padding:26px 16px 10px;border-top:1px solid var(--brd);
   </div>
 </div>
 
-<!-- Firebase -->
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<!-- Firebase async - لا تعلّق الصفحة -->
+<script async src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js" onload="fbLoaded()"></script>
+<script async src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script async src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <script>
 /* ══ CONFIG ══ */
@@ -569,13 +569,20 @@ const FB_CFG = {
   appId:"1:1034179807516:web:4c74c5bf6e08a9347c12d9",
 };
 let fbAuth, fbDB, fbOK=false;
-try {
-  firebase.initializeApp(FB_CFG);
-  fbAuth = firebase.auth();
-  fbDB   = firebase.firestore();
-  fbOK   = true;
-  fbAuth.onAuthStateChanged(u => { window._u=u; updAuthUI(u); if(u) syncDown(u.uid); });
-} catch(e) { console.warn('Firebase:', e.message); }
+
+// يُستدعى تلقائياً لما Firebase ينتهي من التحميل
+function fbLoaded() {
+  // انتظر قليلاً حتى تنتهي ملفات auth و firestore
+  setTimeout(() => {
+    try {
+      if(!firebase.apps.length) firebase.initializeApp(FB_CFG);
+      fbAuth = firebase.auth();
+      fbDB   = firebase.firestore();
+      fbOK   = true;
+      fbAuth.onAuthStateChanged(u => { window._u=u; updAuthUI(u); if(u) syncDown(u.uid); });
+    } catch(e) { console.warn('Firebase:', e.message); }
+  }, 500);
+}
 
 /* ══ TEXT UTILS ══ */
 const DC  = /[\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED\uFE70-\uFEFF\u200C-\u200F]/g;
