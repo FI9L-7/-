@@ -831,37 +831,59 @@ function onSr(){
 }
 window.clrSr=()=>{document.getElementById('sinp').value='';document.getElementById('scl').classList.remove('on');document.getElementById('sRes').innerHTML='';document.getElementById('scnt').textContent='';};
 
+/* ══ SEARCH — بحث محلي في القرآن كاملاً ══ */
+let srIndex=null; // [{gNum,sNum,aNum,sName,text,clean,page}]
+const SR_KEY='qSrIdx';
+
+async function buildSrIndex(){
+  // جرب الكاش أولاً
+  try{
+    const c=localStorage.getItem(SR_KEY);
+    if(c){srIndex=JSON.parse(c);return true;}
+  }catch(e){localStorage.removeItem(SR_KEY);}
+  // حمّل من API
+  try{
+    const r=await fetch('https://api.alquran.cloud/v1/quran/quran-simple');
+    if(!r.ok)return false;
+    const j=await r.json();
+    srIndex=[];
+    j.data.surahs.forEach(s=>{
+      s.ayahs.forEach(a=>{
+        srIndex.push({
+          gNum:a.number,sNum:s.number,aNum:a.numberInSurah,
+          sName:s.name,text:a.text,
+          clean:stripDiac(a.text).replace(/\s+/g,' '),
+          page:a.page
+        });
+      });
+    });
+    try{localStorage.setItem(SR_KEY,JSON.stringify(srIndex));}catch(e){}
+    return true;
+  }catch(e){return false;}
+}
+
 async function doSr(q){
   const rd=document.getElementById('sRes'),cd=document.getElementById('scnt');
+  const cleanQ=stripDiac(q).replace(/\s+/g,' ').trim();
+  if(!cleanQ){rd.innerHTML='';cd.textContent='';return;}
   rd.innerHTML=`<div class="pgload"><div class="sp"></div><span>جاري البحث...</span></div>`;
   cd.textContent='';
-  const cleanQ=stripDiac(q);
-  if(!cleanQ){rd.innerHTML='';return;}
-  
-  // جرب عدة editions حتى يشتغل واحد
-  const editions=['ar','quran-simple','quran-uthmani'];
-  let matches=[];
-  for(const ed of editions){
-    try{
-      const res=await fetch(`https://api.alquran.cloud/v1/search/${encodeURIComponent(cleanQ)}/all/${ed}`);
-      if(!res.ok)continue;
-      const json=await res.json();
-      if(json.data?.matches?.length){
-        matches=json.data.matches;
-        break;
-      }
-    }catch(e){continue;}
+  // بناء الفهرس إذا لم يكن موجوداً
+  if(!srIndex){
+    const ok=await buildSrIndex();
+    if(!ok){rd.innerHTML=`<div class="se">⚠️ تعذّر البحث — تحقق من الاتصال</div>`;return;}
   }
-  
-  if(!matches.length){rd.innerHTML=`<div class="se">لم يُعثر على نتائج لـ «${q}»</div>`;return;}
-  cd.textContent=`${matches.length} نتيجة`;
+  // بحث محلي سريع
+  const results=srIndex.filter(a=>a.clean.includes(cleanQ));
+  if(!results.length){rd.innerHTML=`<div class="se">لم يُعثر على نتائج لـ «${q}»</div>`;return;}
+  cd.textContent=`${results.length} نتيجة`;
   rd.innerHTML='';
-  matches.slice(0,25).forEach((m,i)=>{
-    const txt=typeof m.text==='string'?m.text:'';
-    if(!txt)return;
-    const d=document.createElement('div');d.className='rc';d.style.animationDelay=`${i*25}ms`;
-    d.innerHTML=`<div class="rm">سورة ${m.surah?.name||''} • الآية ${toAr(m.numberInSurah||0)} • صفحة ${toAr(m.page||0)}</div><div class="rt">${txt}</div>`;
-    d.onclick=()=>{sTab('m');hlGN=m.number;gPg(m.page);};
+  results.slice(0,30).forEach((m,i)=>{
+    const d=document.createElement('div');d.className='rc';d.style.animationDelay=`${i*20}ms`;
+    // تمييز الكلمة في النص
+    const hl=m.text.replace(new RegExp(cleanQ.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'),'<mark>$&</mark>');
+    d.innerHTML=`<div class="rm">سورة ${m.sName} • الآية ${toAr(m.aNum)} • صفحة ${toAr(m.page)}</div><div class="rt">${hl}</div>`;
+    d.onclick=()=>{sTab('m');hlGN=m.gNum;gPg(m.page);};
     rd.appendChild(d);
   });
 }
