@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <title>مصحف النور</title>
 <link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -156,17 +156,18 @@ body.light .bnav{background:rgba(244,239,230,.97)}
 .dot.today{border-color:var(--acc);color:var(--acc);font-weight:700}
 
 /* RATINGS */
-.rcard{background:var(--panel);border:1px solid var(--brd);border-radius:16px;padding:20px;margin-bottom:14px}
+.rcard{background:var(--panel);border:1px solid var(--brd);border-radius:16px;padding:16px;margin-bottom:14px;overflow:hidden}
 .rav{font-size:3.5rem;font-weight:900;color:var(--acc2);line-height:1}
 .rcnt{font-size:.78rem;color:var(--txt3);margin-top:4px}
 .rbar-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:.72rem;color:var(--txt3)}
 .rbar-bg{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
 .rbar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--acc3),var(--acc));transition:width .5s ease}
-.rrev{background:var(--bg3);border-radius:12px;padding:12px 14px;margin-bottom:10px;border:1px solid var(--brd);animation:fu .25s ease both}
-.rrev-h{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.rrev{background:var(--bg3);border-radius:12px;padding:12px 14px;margin-bottom:10px;border:1px solid var(--brd);animation:fu .25s ease both;overflow:hidden;max-width:100%;box-sizing:border-box}
+.rrev-h{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
 .rrev-av{width:28px;height:28px;border-radius:50%;background:var(--brd2);display:flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0}
-.rrev-nm{font-size:.78rem;font-weight:700;color:var(--txt);flex:1}
-.rrev-tx{font-size:.82rem;color:var(--txt2);line-height:1.7}
+.rrev-nm{font-size:.78rem;font-weight:700;color:var(--txt);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}
+.rrev-tx{font-size:.82rem;color:var(--txt2);line-height:1.7;word-break:break-word;overflow-wrap:anywhere;white-space:normal;max-width:100%;overflow:hidden}
+@media(max-width:400px){.rbar-row{font-size:.65rem}.rrev-nm{max-width:80px}}
 .mystars{display:flex;gap:8px;margin:12px 0;justify-content:center}
 .mstar{font-size:2.2rem;cursor:pointer;transition:all .2s;opacity:.3}
 .mstar.lit{opacity:1}
@@ -279,7 +280,11 @@ footer{text-align:center;padding:26px 16px 10px;border-top:1px solid var(--brd);
 .ftx a{color:var(--txt3);text-decoration:none}.ftx a:hover{color:var(--acc)}
 ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--brd2);border-radius:3px}
 .sec{animation:fi .3s ease}
-@media(max-width:600px){.mpage{padding:24px 13px}#sGrid{grid-template-columns:repeat(auto-fill,minmax(128px,1fr))}.jrow{gap:6px}.jinp{width:70px}}
+@media(max-width:600px){.mpage{padding:24px 13px}#sGrid{grid-template-columns:repeat(auto-fill,minmax(128px,1fr))}.jrow{gap:6px}.jinp{width:70px}
+.rrev{overflow:hidden;word-break:break-word}
+.rrev-tx{white-space:normal;word-break:break-word;overflow-wrap:anywhere}
+.rbar-row{flex-wrap:wrap;gap:4px}
+}
 </style>
 </head>
 <body>
@@ -467,7 +472,7 @@ footer{text-align:center;padding:26px 16px 10px;border-top:1px solid var(--brd);
         <div style="display:flex;gap:3px;justify-content:center;margin:4px 0" id="ratSB"></div>
         <div class="rcnt" id="ratCnt">لا يوجد تقييمات بعد</div>
       </div>
-      <div style="flex:1;min-width:180px" id="ratBars"></div>
+      <div style="flex:1;min-width:140px" id="ratBars"></div>
     </div>
     <div style="text-align:center">
       <button class="btng" style="padding:10px 28px" onclick="openRate()">⭐ قيّم الآن</button>
@@ -1085,23 +1090,47 @@ function renderRat(all){
 }
 function rSB(avg){const el=document.getElementById('ratSB');if(!el)return;el.innerHTML=[1,2,3,4,5].map(i=>`<span style="font-size:1.2rem;opacity:${i<=Math.round(avg)?1:.25}">⭐</span>`).join('');}
 function rBars(all){const el=document.getElementById('ratBars');if(!el)return;const c={5:0,4:0,3:0,2:0,1:0};all.forEach(r=>{if(c[r.stars]!==undefined)c[r.stars]++;});const mx=Math.max(...Object.values(c),1);el.innerHTML=[5,4,3,2,1].map(n=>`<div class="rbar-row"><span>${n}⭐</span><div class="rbar-bg"><div class="rbar-fill" style="width:${Math.round(c[n]/mx*100)}%"></div></div><span style="width:20px;text-align:left;color:var(--txt2);font-weight:700">${toAr(c[n])}</span></div>`).join('');}
+/* خريطة لحفظ النصوص الكاملة */
+const revData={};
+window.showFullRev=function(id){
+  const el=document.getElementById(id+'t');
+  const btn=document.getElementById(id+'b');
+  if(el&&revData[id]){el.textContent=revData[id];if(btn)btn.style.display='none';}
+};
 function mkRev(r,isMe=false){
   const T=LANGS[curLang]||LANGS.ar;
   const name=isMe?(T.you||'أنت'):(r.displayName||T.user||'مستخدم');
   const c=(r.comment||'').trim();
-  const MAX=100;
+  const MAX=120;
   const id='rv'+Math.random().toString(36).slice(2,7);
   const date=r.ts?new Date(r.ts).toLocaleDateString(curLang==='ar'?'ar-SA':'en-US',{year:'numeric',month:'short',day:'numeric'}):'';
+  const needMore=c.length>MAX;
+  if(needMore)revData[id]=c;
+  const photo=r.photoURL||'';
+  const avHtml=photo?`<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:(isMe?'🧑':'👤');
+  const isAdmin=window._u?.email==='faisallll13579@gmail.com';
+  const canEdit=isMe;
+  const canDel=isMe||isAdmin;
+  const safeC=encodeURIComponent(c);
+  const actBtns=`<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+    ${canEdit?`<button onclick="editRev('${r.uid}')" style="background:none;border:1px solid var(--brd2);color:var(--txt3);padding:3px 10px;border-radius:8px;cursor:pointer;font-size:.7rem;font-family:inherit">✏️ تعديل</button>`:''}
+    ${canDel?`<button onclick="deleteRev('${r.uid}')" style="background:none;border:1px solid rgba(208,96,112,.3);color:var(--red);padding:3px 10px;border-radius:8px;cursor:pointer;font-size:.7rem;font-family:inherit">🗑️ حذف</button>`:''}
+    ${c?`<button onclick="copyRev(decodeURIComponent('${safeC}'))" style="background:none;border:1px solid var(--brd2);color:var(--txt3);padding:3px 10px;border-radius:8px;cursor:pointer;font-size:.7rem;font-family:inherit">📋 نسخ</button>`:''}
+  </div>`;
   return `<div class="rrev" id="${id}">
-    <div class="rrev-h">
-      <div class="rrev-av">${isMe?'🧑':'👤'}</div>
-      <div style="flex:1"><div class="rrev-nm">${name}</div>${date?`<div style="font-size:.62rem;color:var(--txt3)">${date}</div>`:''}</div>
-      <span>${'⭐'.repeat(r.stars)}</span>
+    <div class="rrev-h" onclick="openUserProfile('${r.uid}')" style="cursor:pointer">
+      <div class="rrev-av" style="overflow:hidden;clip-path:circle(50%)">${avHtml}</div>
+      <div style="flex:1;min-width:0">
+        <div class="rrev-nm">${name}${r.username?` <span style="color:var(--acc);font-family:monospace;font-size:.65rem;font-weight:400">@${r.username}</span>`:''}</div>
+        ${date?`<div style="font-size:.62rem;color:var(--txt3)">${date}</div>`:''}
+      </div>
+      <span style="flex-shrink:0">${'⭐'.repeat(r.stars)}</span>
     </div>
     ${c?`<div class="rrev-tx" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--brd)">
-      <span id="${id}t">${c.length>MAX?c.slice(0,MAX)+'…':c}</span>
-      ${c.length>MAX?`<span style="color:var(--acc);cursor:pointer;font-size:.73rem;font-weight:700;display:inline-block;margin-top:4px" onclick="document.getElementById('${id}t').textContent=this.dataset.full;this.remove()" data-full="${c.replace(/"/g,'&quot;')}"> ${T.showMore||'اظهار المزيد'} ▾</span>`:''}
+      <span id="${id}t">${needMore?c.slice(0,MAX)+'…':c}</span>
+      ${needMore?`<button id="${id}b" onclick="document.getElementById('${id}t').textContent=revData['${id}'];this.style.display='none'" style="color:var(--acc);cursor:pointer;font-size:.73rem;font-weight:700;background:none;border:none;padding:0 4px;font-family:inherit"> ${T.showMore||'اظهار المزيد'} ▾</button>`:''}
     </div>`:''}
+    ${(canEdit||canDel||c)?actBtns:''}
   </div>`;
 }
 window.updCharCount=()=>{
@@ -1111,6 +1140,12 @@ window.updCharCount=()=>{
   if(el)el.style.color=v.length>180?'var(--red)':'var(--txt3)';
 };
 window.openRate=()=>{
+  // يجب تسجيل الدخول أولاً
+  if(!window._u){
+    showT('⚠️ سجّل دخولك أولاً للتعليق');
+    openPro();
+    return;
+  }
   selStar=myRat?.stars||0;
   document.getElementById('rTxt').value=myRat?.comment||'';
   updStars(selStar);
@@ -1120,14 +1155,102 @@ window.closeRate=()=>document.getElementById('rOvl').classList.remove('op');
 window.pickStar=v=>{selStar=v;updStars(v);};
 function updStars(v){document.querySelectorAll('.mstar').forEach((s,i)=>s.classList.toggle('lit',i<v));}
 window.submitRat=async()=>{
+  if(!window._u){showT('⚠️ سجّل دخولك أولاً');openPro();return;}
   if(!selStar){showT('⚠️ اختر النجوم');return;}
   const comment=document.getElementById('rTxt').value.trim().substring(0,200);
-  const uid=window._u?.uid||('anon_'+Math.random().toString(36).slice(2));
-  const displayName=CF.displayName||window._u?.displayName||'مستخدم';
-  const rat={stars:selStar,comment,displayName,ts:Date.now(),uid};
+  const uid=window._u.uid;
+  const displayName=CF.displayName||window._u.displayName||'مستخدم';
+  const photoURL=localStorage.getItem('qAv')||window._u.photoURL||'';
+  const username=CF.username||'';
+  const rat={stars:selStar,comment,displayName,username,photoURL,ts:Date.now(),uid};
   myRat=rat;localStorage.setItem('qMyRat',JSON.stringify(rat));
   if(fbOK){try{await fbDB.collection('ratings').doc(uid).set(rat);}catch(e){}}
   closeRate();showT('✅ شكراً على تقييمك!');loadRat();
+};
+
+/* حذف تقييم (للمشرف أو صاحب التعليق) */
+const ADMIN_UID='faisallll13579@gmail.com'; // البريد الإلكتروني للمشرف
+window.deleteRev=async(uid)=>{
+  const me=window._u;
+  if(!me)return;
+  const isAdmin=me.email==='faisallll13579@gmail.com';
+  const isOwner=me.uid===uid;
+  if(!isAdmin&&!isOwner){showT('⚠️ ليس لديك صلاحية');return;}
+  if(!confirm('حذف هذا التقييم؟'))return;
+  try{
+    await fbDB.collection('ratings').doc(uid).delete();
+    if(isOwner){myRat=null;localStorage.removeItem('qMyRat');}
+    showT('🗑️ تم الحذف');loadRat();
+  }catch(e){showT('⚠️ فشل الحذف');}
+};
+
+/* تعديل تقييم */
+window.editRev=(uid)=>{
+  if(window._u?.uid!==uid){showT('⚠️ لا يمكنك تعديل تقييم شخص آخر');return;}
+  openRate();
+};
+
+/* نسخ تعليق */
+window.copyRev=(text)=>{
+  navigator.clipboard?.writeText(text).then(()=>showT('📋 تم النسخ')).catch(()=>{
+    const el=document.createElement('textarea');
+    el.value=text;document.body.appendChild(el);el.select();
+    document.execCommand('copy');document.body.removeChild(el);
+    showT('📋 تم النسخ');
+  });
+};
+
+/* مودال البروفايل العام */
+window.openUserProfile=async(uid)=>{
+  if(!uid)return;
+  // أنشئ مودال مؤقت
+  let m=document.getElementById('upOvl');
+  if(!m){
+    m=document.createElement('div');
+    m.id='upOvl';
+    m.className='movl';
+    m.innerHTML=`<div class="mbox" style="max-width:420px">
+      <div style="height:70px;background:linear-gradient(135deg,var(--acc3),var(--acc));border-radius:24px 24px 0 0"></div>
+      <div style="width:70px;height:70px;border-radius:50%;border:3px solid var(--bg2);background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin:-35px auto 8px;overflow:hidden;clip-path:circle(50%)" id="upAv">👤</div>
+      <div class="mbody" style="padding-top:4px;text-align:center">
+        <div style="font-size:1.05rem;font-weight:700;color:var(--txt);margin-bottom:2px" id="upNm">...</div>
+        <div style="font-size:.72rem;color:var(--acc);font-family:monospace;margin-bottom:14px" id="upUN"></div>
+        <div style="background:var(--bg3);border-radius:12px;padding:12px;margin-bottom:14px" id="upRevs"></div>
+        <button class="btno" onclick="document.getElementById('upOvl').classList.remove('op')" style="width:100%">إغلاق</button>
+      </div>
+    </div>`;
+    m.onclick=e=>{if(e.target===m)m.classList.remove('op');};
+    document.body.appendChild(m);
+  }
+  m.classList.add('op');
+  // جلب البيانات
+  document.getElementById('upNm').textContent='جاري التحميل...';
+  document.getElementById('upUN').textContent='';
+  document.getElementById('upRevs').innerHTML='';
+  document.getElementById('upAv').textContent='👤';
+  try{
+    // جلب بيانات المستخدم
+    const userSnap=await fbDB.collection('users').doc(uid).get();
+    const userData=userSnap.data()||{};
+    const ratSnap=await fbDB.collection('ratings').doc(uid).get();
+    const ratData=ratSnap.data();
+    const name=userData.displayName||ratData?.displayName||'مستخدم';
+    const un=userData.username||ratData?.username||'';
+    const photo=userData.photoURL||ratData?.photoURL||'';
+    document.getElementById('upNm').textContent=name;
+    document.getElementById('upUN').textContent=un?('@'+un):'';
+    const avEl=document.getElementById('upAv');
+    if(photo){avEl.innerHTML=`<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;}
+    // عرض التقييم
+    if(ratData){
+      document.getElementById('upRevs').innerHTML=`
+        <div style="font-size:.75rem;color:var(--txt3);margin-bottom:6px">تقييمه للتطبيق</div>
+        <div style="font-size:1.1rem;margin-bottom:4px">${'⭐'.repeat(ratData.stars)}</div>
+        ${ratData.comment?`<div style="font-size:.82rem;color:var(--txt2);line-height:1.7;word-break:break-word">${ratData.comment}</div>`:'<div style="color:var(--txt3);font-size:.78rem">لا يوجد تعليق</div>'}`;
+    }else{
+      document.getElementById('upRevs').innerHTML='<div style="color:var(--txt3);font-size:.78rem">لم يضف تقييماً بعد</div>';
+    }
+  }catch(e){document.getElementById('upNm').textContent='تعذّر تحميل البيانات';}
 };
 
 /* ══ AUTH ══ */
