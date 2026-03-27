@@ -747,15 +747,15 @@ async function actAy(gn,sn,an,sName,txt){
   document.querySelector(`[data-g="${gn}"]`)?.classList.add('phl');
   document.querySelectorAll('.rbtn').forEach(b=>b.classList.remove('pl','ld','er'));
   try{
-    // تفسير عربي: ar.muyassar | تفسير إنجليزي: en.maududi
-    const [ar,en]=await Promise.all([
-      fetch(`https://api.alquran.cloud/v1/ayah/${gn}/ar.muyassar`),
-      fetch(`https://api.alquran.cloud/v1/ayah/${gn}/en.maududi`),
-    ]);
-    const at=ar.ok?(await ar.json()).data?.text:'';
-    const et=en.ok?(await en.json()).data?.text:'';
-    const showEn=!CF.hideEnglish;
-    tf.innerHTML=`<div class="tf-ar">${at||'—'}</div>${(et&&showEn)?`<div class="tf-en">${et}</div>`:''}`;
+    const isEn=curLang!=='ar';
+    const ed=isEn?'en.maududi':'ar.muyassar';
+    const res=await fetch(`https://api.alquran.cloud/v1/ayah/${gn}/${ed}`);
+    const txt=res.ok?(await res.json()).data?.text:'';
+    if(isEn){
+      tf.innerHTML=`<div class="tf-en" style="direction:ltr;text-align:left;font-family:Georgia,serif;font-size:.85rem;line-height:1.8">${txt||'—'}</div>`;
+    }else{
+      tf.innerHTML=`<div class="tf-ar" translate="no">${txt||'—'}</div>`;
+    }
   }catch{tf.innerHTML='<div style="color:var(--txt3)">⚠️ تعذّر جلب التفسير</div>';}
 }
 
@@ -802,13 +802,17 @@ function closeP(){
 function togExp(e){if(e.target.closest('#pCls')||e.target.closest('#aud'))return;document.getElementById('ply').classList.toggle('ex');}
 
 /* ══ SEARCH ══ */
-// إزالة التشكيل والتطبيع قبل البحث
+// تطبيع النص — يزيل التشكيل ويوحّد الحروف ويصحح الأخطاء الشائعة
 function stripDiac(t){
   return t
     .replace(/[\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED]/g,'')
     .replace(/[أإآٱ]/g,'ا')
     .replace(/ة/g,'ه')
     .replace(/ى/g,'ي')
+    .replace(/ؤ/g,'و')
+    .replace(/ئ/g,'ي')
+    .replace(/هاذ/g,'هذ')
+    .replace(/ذالك/g,'ذلك')
     .replace(/\s+/g,' ')
     .trim();
 }
@@ -1394,7 +1398,6 @@ function setLang(l){
   if(!LANGS[l])return;
   curLang=l;sav('lang',l);
   const T=LANGS[l];
-  const dir=l==='ur'?'rtl':'ltr';
   // أزرار التبويب
   const setT=(id,tx)=>{const e=document.getElementById(id);if(e)e.querySelector('span').textContent=tx;};
   const setT2=(id,tx)=>{const e=document.getElementById(id);if(e)e.textContent=tx;};
@@ -1406,16 +1409,26 @@ function setLang(l){
   const ss=document.getElementById('aSub');if(ss&&!window._u)ss.textContent=T.tapLogin;
   // حقل البحث
   const si=document.getElementById('sinp');if(si)si.placeholder=T.searchPH;
-  // إعدادات
+  // عناصر data-langkey
   document.querySelectorAll('[data-langkey]').forEach(el=>{
     const k=el.dataset.langkey;if(T[k])el.textContent=T[k];
   });
-  // حفظ
-  const svBtn=document.querySelector('#profOvl .btng');
-  // أزرار قارئ الصفحات
-  document.getElementById('btnN1')?.setAttribute('data-lk','nextPage');
   // حدّث lang buttons active state
   document.querySelectorAll('[data-lang]').forEach(b=>b.classList.toggle('on',b.dataset.lang===l));
+  // لو فيه تفسير مفتوح أعد تحميله باللغة الجديدة
+  if(curGN>0){
+    const tf=document.getElementById('tfTxt');
+    if(tf&&tf.style.display!=='none'&&!CF.hideTafsir){
+      const ed=l==='ar'?'ar.muyassar':'en.maududi';
+      tf.innerHTML='<div style="color:var(--txt3)">⏳ جاري جلب التفسير...</div>';
+      fetch(`https://api.alquran.cloud/v1/ayah/${curGN}/${ed}`)
+        .then(r=>r.json()).then(j=>{
+          const txt=j.data?.text||'—';
+          if(l==='ar') tf.innerHTML=`<div class="tf-ar" translate="no">${txt}</div>`;
+          else tf.innerHTML=`<div class="tf-en" style="direction:ltr;text-align:left;font-family:Georgia,serif;font-size:.85rem;line-height:1.8">${txt}</div>`;
+        }).catch(()=>{});
+    }
+  }
 }
 window.setLang=setLang;
 </script>
