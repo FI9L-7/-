@@ -220,7 +220,12 @@ body.light .bnav{background:rgba(244,239,230,.97)}
 .btng{flex:1;padding:10px;background:linear-gradient(135deg,var(--acc3),var(--acc));border:none;border-radius:12px;color:#000;font-family:'Cairo',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;transition:all .2s}
 .btnr{padding:10px 16px;background:rgba(208,96,112,.1);border:1px solid rgba(208,96,112,.3);color:var(--red);border-radius:12px;cursor:pointer;font-family:'Cairo',sans-serif;font-size:.85rem;font-weight:700;transition:all .2s}
 .btno{padding:10px 14px;background:transparent;border:1px solid var(--brd2);color:var(--txt2);border-radius:12px;cursor:pointer;font-family:'Cairo',sans-serif;font-size:.85rem;font-weight:600;transition:all .2s}
-.fitem{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg3);border-radius:10px;border:1px solid var(--brd);margin-bottom:7px}
+.msg-out{background:linear-gradient(135deg,var(--acc3),var(--acc));color:#000;padding:7px 12px;border-radius:16px 16px 4px 16px;align-self:flex-end;max-width:80%;font-size:.82rem;word-break:break-word}
+.msg-in{background:var(--panel);border:1px solid var(--brd2);color:var(--txt);padding:7px 12px;border-radius:16px 16px 16px 4px;align-self:flex-start;max-width:80%;font-size:.82rem;word-break:break-word}
+.msg-time{font-size:.58rem;color:var(--txt3);margin-top:2px;text-align:right}
+.frnd-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border-radius:12px;border:1px solid var(--brd);margin-bottom:7px;cursor:pointer;transition:all .2s}
+.frnd-item:hover{border-color:var(--acc3);background:var(--panel)}
+.req-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border-radius:12px;border:1px solid var(--brd);margin-bottom:7px}
 .fdl{background:none;border:none;color:var(--txt3);cursor:pointer;font-size:.85rem;padding:4px;transition:color .2s}
 .fdl:hover{color:var(--red)}
 
@@ -327,17 +332,75 @@ footer{text-align:center;padding:26px 16px 10px;border-top:1px solid var(--brd);
           <option value="private">🔒 خاصة</option>
         </select>
       </div>
-      <div style="font-size:.82rem;font-weight:700;color:var(--txt2);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--brd)">👥 الأصدقاء</div>
-      <div id="fList" style="margin-bottom:10px"></div>
-      <div style="display:flex;gap:7px;margin-bottom:16px">
-        <input type="text" id="fUI" style="flex:1;padding:9px 12px;background:var(--bg3);border:1px solid var(--brd2);color:var(--txt);font-family:monospace;font-size:.85rem;border-radius:10px;outline:none;direction:ltr" placeholder="@username" maxlength="20">
-        <button class="btno" onclick="addFriend()" style="padding:9px 14px;flex-shrink:0">إضافة +</button>
+      <!-- أزرار التبويب داخل البروفايل -->
+      <div style="display:flex;gap:6px;margin-bottom:12px;border-bottom:1px solid var(--brd);padding-bottom:10px">
+        <button class="sgb on" id="ftabF" onclick="switchFTab('f')" style="flex:1;text-align:center">👥 أصدقاء</button>
+        <button class="sgb" id="ftabR" onclick="switchFTab('r')" style="flex:1;text-align:center;position:relative">
+          طلبات<span id="reqBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;border-radius:50%;width:16px;height:16px;font-size:.6rem;display:none;align-items:center;justify-content:center">0</span>
+        </button>
+        <button class="sgb" id="ftabM" onclick="switchFTab('m')" style="flex:1;text-align:center;position:relative">
+          رسائل<span id="msgBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--acc);color:#000;border-radius:50%;width:16px;height:16px;font-size:.6rem;align-items:center;justify-content:center">!</span>
+        </button>
       </div>
+
+      <!-- تبويب الأصدقاء -->
+      <div id="ftF">
+        <div id="fList" style="margin-bottom:10px"></div>
+        <div style="display:flex;gap:7px;margin-bottom:16px">
+          <input type="text" id="fUI" style="flex:1;padding:9px 12px;background:var(--bg3);border:1px solid var(--brd2);color:var(--txt);font-family:monospace;font-size:.85rem;border-radius:10px;outline:none;direction:ltr" placeholder="@username" maxlength="20">
+          <button class="btno" onclick="sendFriendReq()" style="padding:9px 14px;flex-shrink:0">إرسال طلب</button>
+        </div>
+      </div>
+
+      <!-- تبويب الطلبات -->
+      <div id="ftR" style="display:none">
+        <div id="reqList" style="margin-bottom:10px">
+          <div style="text-align:center;color:var(--txt3);font-size:.78rem;padding:16px">لا يوجد طلبات</div>
+        </div>
+      </div>
+
+      <!-- تبويب الرسائل -->
+      <div id="ftM" style="display:none">
+        <div id="msgFriendList" style="margin-bottom:10px"></div>
+        <!-- نافذة المحادثة -->
+        <div id="chatBox" style="display:none">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+            <button class="btno" style="padding:5px 10px;font-size:.75rem" onclick="document.getElementById('chatBox').style.display='none';document.getElementById('msgFriendList').style.display='block'">← رجوع</button>
+            <div style="font-size:.85rem;font-weight:700;color:var(--acc2)" id="chatName">—</div>
+          </div>
+          <div id="chatMsgs" style="height:200px;overflow-y:auto;background:var(--bg3);border-radius:10px;padding:10px;margin-bottom:8px;display:flex;flex-direction:column;gap:6px"></div>
+          <div style="display:flex;gap:6px">
+            <input type="text" id="chatInp" style="flex:1;padding:8px 12px;background:var(--bg3);border:1px solid var(--brd2);color:var(--txt);font-family:'Cairo',sans-serif;font-size:.85rem;border-radius:10px;outline:none" placeholder="اكتب رسالة..." onkeydown="if(event.key==='Enter')sendMsg()">
+            <button class="btng" onclick="sendMsg()" style="padding:8px 14px;flex-shrink:0">إرسال</button>
+          </div>
+        </div>
+      </div>
+
       <div class="pfr">
         <button class="btng" onclick="savePro()">حفظ</button>
         <button class="btnr" onclick="doLogout();closePro()">خروج</button>
         <button class="btno" onclick="closePro()">إغلاق</button>
       </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- مودال ملف الصديق -->
+<div class="movl" id="friendOvl" onclick="if(event.target===this)this.classList.remove('op')">
+<div class="mbox">
+  <div class="pbanner"></div>
+  <div class="pavwrap">
+    <div class="pav"><span id="fProAvE">👤</span></div>
+  </div>
+  <div class="mbody" style="padding-top:6px;text-align:center">
+    <div style="font-size:1.1rem;font-weight:700;color:var(--txt);margin-bottom:3px" id="fProName">—</div>
+    <div style="font-size:.72rem;color:var(--acc);margin-bottom:14px;font-family:monospace" id="fProUN">—</div>
+    <div id="fProStats" style="display:flex;gap:10px;justify-content:center;margin-bottom:16px"></div>
+    <div id="fProRat" style="margin-bottom:16px"></div>
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button class="btng" onclick="openChatWith(currentFriendUid)" style="padding:9px 20px">💬 رسالة</button>
+      <button class="btno" onclick="document.getElementById('friendOvl').classList.remove('op')" style="padding:9px 16px">إغلاق</button>
     </div>
   </div>
 </div>
@@ -720,7 +783,10 @@ function renderPg(p,ayahs){
     if(sn===1&&an===1)return;
     let txt=a.text;
     if(sn!==1&&an===1&&sn!==9){
-      txt=txt.replace(/^بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِيمِ\s*/,'').trim();
+      // إزالة البسملة — تغطي كل أشكال الكتابة والتشكيل
+      const bismPat=/^[\s\u200b-\u200f\u202a-\u202e\ufeff]*(?:بِسۡمِ|بسم)[\u0600-\u06ff\s\u064b-\u065f\u0670]{5,50}(?:ٱلرَّحِيمِ|الرحيم)[\s\u200b-\u200f]*/;
+      txt=txt.replace(bismPat,'').trim();
+      if(!txt)return;
     }
     const sp=document.createElement('span');
     sp.className='ayah';
@@ -1121,11 +1187,19 @@ function mkRev(r,isMe=false){
   const canEdit=isMe;
   const canDel=isMe||isAdmin;
   const safeC=encodeURIComponent(c);
-  const actBtns=`<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-    ${canEdit?`<button onclick="editRev('${r.uid}')" style="background:none;border:1px solid var(--brd2);color:var(--txt3);padding:3px 10px;border-radius:8px;cursor:pointer;font-size:.7rem;font-family:inherit">✏️ تعديل</button>`:''}
-    ${canDel?`<button onclick="deleteRev('${r.uid}')" style="background:none;border:1px solid rgba(208,96,112,.3);color:var(--red);padding:3px 10px;border-radius:8px;cursor:pointer;font-size:.7rem;font-family:inherit">🗑️ حذف</button>`:''}
-    ${c?`<button onclick="copyRev(decodeURIComponent('${safeC}'))" style="background:none;border:1px solid var(--brd2);color:var(--txt3);padding:3px 10px;border-radius:8px;cursor:pointer;font-size:.7rem;font-family:inherit">📋 نسخ</button>`:''}
-  </div>`;
+  // اللايك والديسلايك
+  const myLiked=(r.likedBy||[]).includes(window._u?.uid||'');
+  const myDisliked=(r.dislikedBy||[]).includes(window._u?.uid||'');
+  const likes=(r.likedBy||[]).length;
+  const dislikes=(r.dislikedBy||[]).length;
+  const actBtns=`<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center">
+    <button onclick="toggleLike('${r.uid}',true)" style="background:${myLiked?'rgba(201,168,76,.15)':'none'};border:1px solid ${myLiked?'var(--acc)':'var(--brd2)'};color:${myLiked?'var(--acc)':'var(--txt3)'};padding:3px 10px;border-radius:20px;cursor:pointer;font-size:.72rem;font-family:inherit;display:flex;align-items:center;gap:4px">❤️ <span id="${id}lc">${likes||''}</span></button>
+    <button onclick="toggleLike('${r.uid}',false)" style="background:${myDisliked?'rgba(208,96,112,.1)':'none'};border:1px solid ${myDisliked?'var(--red)':'var(--brd2)'};color:${myDisliked?'var(--red)':'var(--txt3)'};padding:3px 10px;border-radius:20px;cursor:pointer;font-size:.72rem;font-family:inherit;display:flex;align-items:center;gap:4px">👎 <span id="${id}dc">${dislikes||''}</span></button>
+    <button onclick="replyToRev('${r.uid}','${name.replace(/'/g,'')}')" style="background:none;border:1px solid var(--brd2);color:var(--txt3);padding:3px 10px;border-radius:20px;cursor:pointer;font-size:.72rem;font-family:inherit">💬 ${T.reply||'رد'}</button>
+    ${canEdit?`<button onclick="editRev('${r.uid}')" style="background:none;border:1px solid var(--brd2);color:var(--txt3);padding:3px 10px;border-radius:8px;cursor:pointer;font-size:.7rem;font-family:inherit">✏️</button>`:''}
+    ${canDel?`<button onclick="deleteRev('${r.uid}')" style="background:none;border:1px solid rgba(208,96,112,.3);color:var(--red);padding:3px 10px;border-radius:8px;cursor:pointer;font-size:.7rem;font-family:inherit">🗑️</button>`:''}
+  </div>
+  <div id="${id}rep" style="margin-top:6px"></div>`;
   return `<div class="rrev" id="${id}">
     <div class="rrev-h" onclick="openUserProfile('${r.uid}')" style="cursor:pointer">
       <div class="rrev-av" style="overflow:hidden;clip-path:circle(50%)">${avHtml}</div>
@@ -1139,9 +1213,84 @@ function mkRev(r,isMe=false){
       <span id="${id}t">${needMore?c.slice(0,MAX)+'…':c}</span>
       ${needMore?`<button id="${id}b" onclick="document.getElementById('${id}t').textContent=revData['${id}'];this.style.display='none'" style="color:var(--acc);cursor:pointer;font-size:.73rem;font-weight:700;background:none;border:none;padding:0 4px;font-family:inherit"> ${T.showMore||'اظهار المزيد'} ▾</button>`:''}
     </div>`:''}
-    ${(canEdit||canDel||c)?actBtns:''}
+    ${actBtns}
+    ${(r.replies||[]).length?`<div style="margin-top:8px;border-top:1px solid var(--brd);padding-top:8px">${(r.replies||[]).map(rep=>`
+      <div style="display:flex;gap:8px;margin-bottom:8px;padding:8px;background:var(--bg2);border-radius:10px;font-size:.78rem">
+        <div style="width:24px;height:24px;border-radius:50%;background:var(--brd2);display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0">${rep.photoURL?`<img src="${rep.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:'👤'}</div>
+        <div style="flex:1">
+          <div style="font-weight:700;color:var(--txt);font-size:.72rem">${rep.name||'مستخدم'} <span style="color:var(--txt3);font-weight:400">${rep.ts?new Date(rep.ts).toLocaleDateString():''}</span></div>
+          <div style="color:var(--txt2);margin-top:2px">${rep.text||''}</div>
+        </div>
+      </div>`).join('')}</div>`:''}
   </div>`;
 }
+
+// ── لايك وديسلايك ──
+window.toggleLike=async(uid,isLike)=>{
+  if(!window._u){showT('⚠️ سجّل دخولك أولاً');openPro();return;}
+  if(!fbOK)return;
+  const me=window._u.uid;
+  const ref=fbDB.collection('ratings').doc(uid);
+  const snap=await ref.get();if(!snap.exists)return;
+  const data=snap.data();
+  const likedBy=data.likedBy||[];
+  const dislikedBy=data.dislikedBy||[];
+  if(isLike){
+    const already=likedBy.includes(me);
+    await ref.update({
+      likedBy:already?likedBy.filter(x=>x!==me):[...likedBy.filter(x=>x!==me),me],
+      dislikedBy:dislikedBy.filter(x=>x!==me)
+    });
+  }else{
+    const already=dislikedBy.includes(me);
+    await ref.update({
+      dislikedBy:already?dislikedBy.filter(x=>x!==me):[...dislikedBy.filter(x=>x!==me),me],
+      likedBy:likedBy.filter(x=>x!==me)
+    });
+  }
+  loadRat();
+};
+
+// ── رد على تقييم ──
+window.replyToRev=(uid,name)=>{
+  if(!window._u){showT('⚠️ سجّل دخولك أولاً');openPro();return;}
+  const T=LANGS[curLang]||LANGS.ar;
+  // أنشئ مربع رد
+  const existing=document.getElementById('replyBox');if(existing)existing.remove();
+  const box=document.createElement('div');
+  box.id='replyBox';
+  box.style.cssText='position:fixed;bottom:0;left:0;right:0;z-index:2000;background:var(--bg2);border-top:2px solid var(--acc);padding:12px 14px;display:flex;gap:8px;align-items:center;backdrop-filter:blur(10px)';
+  box.innerHTML=`
+    <div style="flex:1">
+      <div style="font-size:.7rem;color:var(--acc);margin-bottom:4px">${T.replyingTo||'الرد على'}: <strong>${name}</strong></div>
+      <input id="replyInp" type="text" placeholder="${T.writeReply||'اكتب ردك...'}" maxlength="200"
+        style="width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--brd2);color:var(--txt);font-family:'Cairo',sans-serif;font-size:.9rem;border-radius:10px;outline:none"
+        onkeydown="if(event.key==='Enter')sendReply('${uid}')">
+    </div>
+    <button onclick="sendReply('${uid}')" style="background:linear-gradient(135deg,var(--acc3),var(--acc));border:none;color:#000;padding:8px 16px;border-radius:10px;cursor:pointer;font-family:'Cairo',sans-serif;font-weight:700;font-size:.85rem">إرسال</button>
+    <button onclick="document.getElementById('replyBox').remove()" style="background:none;border:none;color:var(--txt3);cursor:pointer;font-size:1.2rem;padding:4px">✕</button>`;
+  document.body.appendChild(box);
+  box.querySelector('#replyInp').focus();
+};
+window.sendReply=async(uid)=>{
+  const inp=document.getElementById('replyInp');
+  const txt=inp?.value.trim();
+  if(!txt)return;
+  if(!fbOK||!window._u)return;
+  const ref=fbDB.collection('ratings').doc(uid);
+  const snap=await ref.get();if(!snap.exists)return;
+  const replies=snap.data().replies||[];
+  replies.push({
+    uid:window._u.uid,
+    name:CF.displayName||window._u.displayName||'مستخدم',
+    photoURL:localStorage.getItem('qAv')||window._u.photoURL||'',
+    text:txt,ts:Date.now()
+  });
+  await ref.update({replies});
+  document.getElementById('replyBox')?.remove();
+  showT('✅ تم إرسال الردّ');
+  loadRat();
+};
 window.updCharCount=()=>{
   const v=document.getElementById('rTxt')?.value||'';
   const el=document.getElementById('charCount');
@@ -1212,54 +1361,99 @@ window.copyRev=(text)=>{
 /* مودال البروفايل العام */
 window.openUserProfile=async(uid)=>{
   if(!uid)return;
-  // أنشئ مودال مؤقت
+  // لا تفتح ملفك الشخصي هنا
+  if(uid===window._u?.uid){openPro();return;}
   let m=document.getElementById('upOvl');
   if(!m){
     m=document.createElement('div');
-    m.id='upOvl';
-    m.className='movl';
+    m.id='upOvl';m.className='movl';
     m.innerHTML=`<div class="mbox" style="max-width:420px">
-      <div style="height:70px;background:linear-gradient(135deg,var(--acc3),var(--acc));border-radius:24px 24px 0 0"></div>
-      <div style="width:70px;height:70px;border-radius:50%;border:3px solid var(--bg2);background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin:-35px auto 8px;overflow:hidden;clip-path:circle(50%)" id="upAv">👤</div>
+      <div style="height:80px;background:linear-gradient(135deg,var(--acc3),var(--acc));border-radius:24px 24px 0 0"></div>
+      <div style="width:74px;height:74px;border-radius:50%;border:3px solid var(--bg2);background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:1.9rem;margin:-37px auto 10px;overflow:hidden;clip-path:circle(50%);position:relative;z-index:2" id="upAv">👤</div>
       <div class="mbody" style="padding-top:4px;text-align:center">
         <div style="font-size:1.05rem;font-weight:700;color:var(--txt);margin-bottom:2px" id="upNm">...</div>
-        <div style="font-size:.72rem;color:var(--acc);font-family:monospace;margin-bottom:14px" id="upUN"></div>
-        <div style="background:var(--bg3);border-radius:12px;padding:12px;margin-bottom:14px" id="upRevs"></div>
-        <button class="btno" onclick="document.getElementById('upOvl').classList.remove('op')" style="width:100%">إغلاق</button>
+        <div style="font-size:.72rem;color:var(--acc);font-family:monospace;margin-bottom:4px" id="upUN"></div>
+        <div id="upKhatma" style="margin-bottom:12px"></div>
+        <div id="upRevs" style="background:var(--bg3);border-radius:12px;padding:12px;margin-bottom:14px;text-align:right"></div>
+        <div style="display:flex;gap:8px">
+          <button id="upMsgBtn" class="btng" onclick="upSendMsg()" style="flex:1;display:none">💬 راسله</button>
+          <button id="upAddBtn" class="btno" onclick="upSendReq()" style="flex:1;display:none">➕ إضافة صديق</button>
+          <button class="btno" onclick="document.getElementById('upOvl').classList.remove('op')" style="flex:1">إغلاق</button>
+        </div>
       </div>
     </div>`;
     m.onclick=e=>{if(e.target===m)m.classList.remove('op');};
     document.body.appendChild(m);
   }
   m.classList.add('op');
-  // جلب البيانات
-  document.getElementById('upNm').textContent='جاري التحميل...';
+  document.getElementById('upNm').textContent='⏳ جاري التحميل...';
   document.getElementById('upUN').textContent='';
   document.getElementById('upRevs').innerHTML='';
-  document.getElementById('upAv').textContent='👤';
+  document.getElementById('upKhatma').innerHTML='';
+  document.getElementById('upAv').innerHTML='👤';
+  document.getElementById('upMsgBtn').style.display='none';
+  document.getElementById('upAddBtn').style.display='none';
+
   try{
-    // جلب بيانات المستخدم
-    const userSnap=await fbDB.collection('users').doc(uid).get();
+    const [userSnap,ratSnap]=await Promise.all([
+      fbDB.collection('users').doc(uid).get(),
+      fbDB.collection('ratings').doc(uid).get()
+    ]);
     const userData=userSnap.data()||{};
-    const ratSnap=await fbDB.collection('ratings').doc(uid).get();
     const ratData=ratSnap.data();
     const name=userData.displayName||ratData?.displayName||'مستخدم';
-    const un=userData.username||ratData?.username||'';
-    const photo=userData.photoURL||ratData?.photoURL||'';
+    const un=userData.username||'';
+    const photo=userData.photoURL||'';
     document.getElementById('upNm').textContent=name;
     document.getElementById('upUN').textContent=un?('@'+un):'';
-    const avEl=document.getElementById('upAv');
-    if(photo){avEl.innerHTML=`<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;}
-    // عرض التقييم
+    if(photo){document.getElementById('upAv').innerHTML=`<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;}
+
+    // ختمة
+    const kh=userData.khatma;
+    const kPriv=userData.khatmaPrivacy||'public';
+    if(kh&&kPriv==='public'){
+      const pct=Math.min(Math.round(((kh.curPg||1)-1)/604*100),100);
+      document.getElementById('upKhatma').innerHTML=`
+        <div style="font-size:.72rem;color:var(--txt3);margin-bottom:4px">تقدم الختمة</div>
+        <div style="background:var(--bg3);border-radius:8px;height:8px;overflow:hidden;margin-bottom:2px">
+          <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,var(--acc3),var(--acc));border-radius:8px"></div>
+        </div>
+        <div style="font-size:.68rem;color:var(--txt3)">${pct}٪ — صفحة ${kh.curPg||1} من ٦٠٤</div>`;
+    }
+
+    // تقييم
     if(ratData){
       document.getElementById('upRevs').innerHTML=`
         <div style="font-size:.75rem;color:var(--txt3);margin-bottom:6px">تقييمه للتطبيق</div>
-        <div style="font-size:1.1rem;margin-bottom:4px">${'⭐'.repeat(ratData.stars)}</div>
-        ${ratData.comment?`<div style="font-size:.82rem;color:var(--txt2);line-height:1.7;word-break:break-word">${ratData.comment}</div>`:'<div style="color:var(--txt3);font-size:.78rem">لا يوجد تعليق</div>'}`;
+        <div style="font-size:1.2rem;margin-bottom:4px">${'⭐'.repeat(ratData.stars)}</div>
+        ${ratData.comment?`<div style="font-size:.82rem;color:var(--txt2);line-height:1.7">${ratData.comment}</div>`:'<div style="color:var(--txt3);font-size:.78rem">لا يوجد تعليق</div>'}`;
     }else{
       document.getElementById('upRevs').innerHTML='<div style="color:var(--txt3);font-size:.78rem">لم يضف تقييماً بعد</div>';
     }
+
+    // أزرار
+    const isFriend=fData.some(f=>f.uid===uid);
+    if(isFriend){
+      const mb=document.getElementById('upMsgBtn');mb.style.display='block';
+      mb.onclick=()=>{document.getElementById('upOvl').classList.remove('op');openChatWith(uid,name);};
+    }else if(window._u){
+      document.getElementById('upAddBtn').style.display='block';
+      document.getElementById('upAddBtn').dataset.uid=uid;
+      document.getElementById('upAddBtn').dataset.un=un;
+    }
+    // حفظ للاستخدام لاحقاً
+    window._upCurrentUid=uid;window._upCurrentUn=un;
   }catch(e){document.getElementById('upNm').textContent='تعذّر تحميل البيانات';}
+};
+
+window.upSendReq=async()=>{
+  const un=window._upCurrentUn;
+  if(!un){showT('⚠️ لا يوجد يوزرنيم');return;}
+  const old=document.getElementById('fUI');
+  if(old)old.value=un;
+  document.getElementById('upOvl')?.classList.remove('op');
+  openPro();
+  setTimeout(()=>{switchFTab('f');sendFriendReq();},300);
 };
 
 /* ══ AUTH ══ */
@@ -1403,29 +1597,198 @@ document.getElementById('avFile')?.addEventListener('change',e=>{
 });
 
 /* FRIENDS */
-window.addFriend=async()=>{
+/* ══ FRIENDS + REQUESTS + CHAT ══ */
+let currentFriendUid=null,chatUnsub=null;
+window.switchFTab=t=>{
+  ['F','R','M'].forEach(x=>{
+    document.getElementById('ftab'+x)?.classList.toggle('on',t.toUpperCase()===x);
+    const el=document.getElementById('ft'+x);if(el)el.style.display=t.toUpperCase()===x?'block':'none';
+  });
+  if(t==='r')loadRequests();
+  if(t==='m')loadMsgFriends();
+};
+
+window.sendFriendReq=async()=>{
   const un=document.getElementById('fUI').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'');
   if(!un||un.length<3){showT('⚠️ أدخل يوزر صحيح');return;}
   if(!fbOK||!window._u){showT('⚠️ سجّل دخولك أولاً');return;}
-  if(fData.some(f=>f.username===un)){showT('⚠️ موجود بالفعل');return;}
+  if(un===CF.username){showT('⚠️ لا يمكنك إضافة نفسك');return;}
+  if(fData.some(f=>f.username===un)){showT('⚠️ موجود في أصدقائك');return;}
   try{
     const sn=await fbDB.collection('usernames').doc(un).get();
     if(!sn.exists){showT('⚠️ لم يُعثر على هذا اليوزر');return;}
-    const {uid}=sn.data();
-    const us=await fbDB.collection('users').doc(uid).get();
-    const kh=us.data()?.khatma,pv=us.data()?.khatmaPrivacy||'public';
-    const pct=(kh&&pv==='public')?Math.min(Math.round(((kh.curPg||1)-1)/604*100),100):null;
-    fData.push({username:un,displayName:sn.data().displayName||un,pct});
-    await fbDB.collection('users').doc(window._u.uid).set({friends:fData},{merge:true});
-    document.getElementById('fUI').value='';renderFr();showT('✅ تمت الإضافة');
+    await fbDB.collection('friendRequests').add({
+      fromUid:window._u.uid,fromName:CF.displayName||window._u.displayName||'مستخدم',
+      fromUsername:CF.username||'',toUid:sn.data().uid,toUsername:un,status:'pending',ts:Date.now()
+    });
+    document.getElementById('fUI').value='';
+    showT('✅ تم إرسال طلب الصداقة');
   }catch(e){showT('⚠️ '+e.message);}
 };
+
+async function loadRequests(){
+  const el=document.getElementById('reqList');if(!el||!fbOK||!window._u)return;
+  el.innerHTML='<div style="text-align:center;color:var(--txt3);font-size:.75rem;padding:10px">⏳...</div>';
+  try{
+    const snap=await fbDB.collection('friendRequests').where('toUid','==',window._u.uid).where('status','==','pending').get();
+    const badge=document.getElementById('reqBadge');
+    if(badge){badge.textContent=snap.size;badge.style.display=snap.size>0?'flex':'none';}
+    if(snap.empty){el.innerHTML='<div style="text-align:center;color:var(--txt3);font-size:.78rem;padding:16px">لا يوجد طلبات</div>';return;}
+    el.innerHTML='';
+    snap.forEach(doc=>{
+      const d=doc.data();
+      const div=document.createElement('div');div.className='req-item';
+      div.innerHTML=`<div style="width:32px;height:32px;border-radius:50%;background:var(--brd2);display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0">👤</div>
+        <div style="flex:1;min-width:0"><div style="font-size:.82rem;font-weight:700;color:var(--txt)">${d.fromName}</div><div style="font-size:.68rem;color:var(--acc);font-family:monospace">@${d.fromUsername}</div></div>
+        <button class="btng" style="padding:5px 12px;font-size:.75rem;flex-shrink:0" onclick="acceptReq('${doc.id}','${d.fromUid}','${d.fromName}','${d.fromUsername}')">قبول ✓</button>
+        <button class="btnr" style="padding:5px 10px;font-size:.75rem;flex-shrink:0;margin-right:4px" onclick="rejectReq('${doc.id}')">رفض</button>`;
+      el.appendChild(div);
+    });
+  }catch(e){el.innerHTML='<div style="color:var(--red);font-size:.75rem;padding:10px">⚠️ تعذّر</div>';}
+}
+
+window.acceptReq=async(reqId,fromUid,fromName,fromUsername)=>{
+  if(!fbOK||!window._u)return;
+  try{
+    await fbDB.collection('friendRequests').doc(reqId).update({status:'accepted'});
+    fData.push({uid:fromUid,displayName:fromName,username:fromUsername,pct:null});
+    await fbDB.collection('users').doc(window._u.uid).set({friends:fData},{merge:true});
+    const td=await fbDB.collection('users').doc(fromUid).get();
+    const tf=td.data()?.friends||[];
+    tf.push({uid:window._u.uid,displayName:CF.displayName||window._u.displayName||'مستخدم',username:CF.username||'',pct:null});
+    await fbDB.collection('users').doc(fromUid).set({friends:tf},{merge:true});
+    showT('✅ تم قبول الطلب!');loadRequests();renderFr();
+  }catch(e){showT('⚠️ '+e.message);}
+};
+
+window.rejectReq=async(reqId)=>{
+  if(!fbOK)return;
+  try{await fbDB.collection('friendRequests').doc(reqId).update({status:'rejected'});showT('تم الرفض');loadRequests();}catch(e){}
+};
+
+function loadMsgFriends(){
+  const el=document.getElementById('msgFriendList');if(!el)return;
+  document.getElementById('chatBox').style.display='none';
+  el.style.display='block';
+  if(!fData.length){
+    el.innerHTML='<div style="text-align:center;color:var(--txt3);font-size:.78rem;padding:24px">لا يوجد أصدقاء بعد<br><span style="font-size:.7rem">أضف أصدقاء من تبويب الأصدقاء</span></div>';
+    return;
+  }
+  // جلب آخر رسالة لكل محادثة
+  const promises=fData.map(async f=>{
+    if(!fbOK||!window._u||!f.uid)return{...f,lastMsg:'',lastTs:0,unread:0};
+    try{
+      const chatId=[window._u.uid,f.uid].sort().join('_');
+      const snap=await fbDB.collection('chats').doc(chatId).get();
+      const d=snap.data()||{};
+      return{...f,lastMsg:d.lastMsg||'',lastTs:d.lastTs||0,unread:d.unread?.[window._u.uid]||0};
+    }catch{return{...f,lastMsg:'',lastTs:0,unread:0};}
+  });
+  Promise.all(promises).then(friends=>{
+    friends.sort((a,b)=>(b.lastTs||0)-(a.lastTs||0));
+    el.innerHTML=friends.map(f=>`
+      <div class="frnd-item" onclick="openChatWith('${f.uid}','${f.displayName||''}')">
+        <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--acc3),var(--acc));display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;overflow:hidden;clip-path:circle(50%)">
+          ${f.photoURL?`<img src="${f.photoURL}" style="width:100%;height:100%;object-fit:cover">`:f.displayName?.[0]||'👤'}
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:.83rem;font-weight:700;color:var(--txt)">${f.displayName||'—'}</div>
+          <div style="font-size:.68rem;color:var(--txt3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.lastMsg||'اضغط للمحادثة'}</div>
+        </div>
+        ${f.unread>0?`<span style="background:var(--acc);color:#000;border-radius:50%;width:18px;height:18px;font-size:.6rem;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">${f.unread}</span>`:'<span style="font-size:.75rem;color:var(--txt3)">›</span>'}
+      </div>`).join('');
+  });
+}
+
+window.openChatWith=async(uid,name)=>{
+  if(!uid||!fbOK||!window._u){if(!fbOK||!window._u)showT('⚠️ سجّل دخولك أولاً');return;}
+  currentFriendUid=uid;
+  if(!name){const f=fData.find(x=>x.uid===uid);name=f?.displayName||'صديق';}
+  document.getElementById('chatName').textContent=name;
+  const mfl=document.getElementById('msgFriendList');if(mfl)mfl.style.display='none';
+  document.getElementById('chatBox').style.display='block';
+  document.getElementById('chatMsgs').innerHTML='<div style="text-align:center;color:var(--txt3);font-size:.75rem;padding:20px">⏳</div>';
+  const chatId=[window._u.uid,uid].sort().join('_');
+  if(chatUnsub)chatUnsub();
+  chatUnsub=fbDB.collection('chats').doc(chatId).collection('msgs').orderBy('ts').limitToLast(50)
+    .onSnapshot(snap=>{
+      const ce=document.getElementById('chatMsgs');if(!ce)return;
+      ce.innerHTML='';
+      snap.forEach(doc=>{
+        const d=doc.data(),isMe=d.from===window._u.uid;
+        const div=document.createElement('div');div.style.cssText='display:flex;flex-direction:column';
+        div.innerHTML=`<div class="${isMe?'msg-out':'msg-in'}">${d.text}</div><div class="msg-time" style="align-self:${isMe?'flex-end':'flex-start'}">${new Date(d.ts).toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'})}</div>`;
+        ce.appendChild(div);
+      });
+      ce.scrollTop=ce.scrollHeight;
+    });
+  switchFTab('m');openPro();
+};
+
+window.sendMsg=async()=>{
+  const inp=document.getElementById('chatInp');
+  const text=inp?.value.trim();
+  if(!text||!currentFriendUid||!fbOK||!window._u)return;
+  inp.value='';
+  const chatId=[window._u.uid,currentFriendUid].sort().join('_');
+  try{
+    await fbDB.collection('chats').doc(chatId).collection('msgs').add({
+      from:window._u.uid,text,ts:Date.now()
+    });
+    // تحديث آخر رسالة + عداد غير مقروء للمستقبل
+    const unreadUpdate={};
+    unreadUpdate[`unread.${currentFriendUid}`]=firebase.firestore.FieldValue.increment(1);
+    await fbDB.collection('chats').doc(chatId).set({
+      users:[window._u.uid,currentFriendUid],
+      lastMsg:text,lastTs:Date.now(),
+      ...unreadUpdate
+    },{merge:true});
+  }catch(e){showT('⚠️ فشل الإرسال');}
+};
+
+window.viewFriendProfile=async(uid)=>{
+  if(!fbOK)return;
+  currentFriendUid=uid;
+  const f=fData.find(x=>x.uid===uid);
+  document.getElementById('fProName').textContent=f?.displayName||'—';
+  document.getElementById('fProUN').textContent=f?.username?'@'+f.username:'';
+  document.getElementById('fProStats').innerHTML='';
+  document.getElementById('fProRat').innerHTML='';
+  document.getElementById('friendOvl').classList.add('op');
+  try{
+    const [ud,rs]=await Promise.all([
+      fbDB.collection('users').doc(uid).get(),
+      fbDB.collection('ratings').where('uid','==',uid).limit(1).get()
+    ]);
+    const d=ud.data()||{},kh=d.khatma,priv=d.khatmaPrivacy||'public';
+    const pct=(kh&&priv==='public')?Math.min(Math.round(((kh.curPg||1)-1)/604*100),100):null;
+    document.getElementById('fProStats').innerHTML=`
+      ${pct!=null?`<div style="text-align:center;background:var(--bg3);padding:10px 16px;border-radius:12px;border:1px solid var(--brd)"><div style="font-size:1.2rem;font-weight:900;color:var(--acc)">${pct}٪</div><div style="font-size:.68rem;color:var(--txt3)">ختمة</div></div>`:''}
+      ${(d.bookmarks||[]).length?`<div style="text-align:center;background:var(--bg3);padding:10px 16px;border-radius:12px;border:1px solid var(--brd)"><div style="font-size:1.2rem;font-weight:900;color:var(--acc)">${toAr((d.bookmarks||[]).length)}</div><div style="font-size:.68rem;color:var(--txt3)">محفوظ</div></div>`:''}`;
+    if(!rs.empty){const r=rs.docs[0].data();document.getElementById('fProRat').innerHTML=`<div style="background:var(--bg3);border-radius:12px;padding:10px 14px;border:1px solid var(--brd)"><div style="font-size:.75rem;color:var(--txt3);margin-bottom:4px">تقييمه للتطبيق</div><div>${'⭐'.repeat(r.stars)}</div>${r.comment?`<div style="font-size:.78rem;color:var(--txt2);margin-top:5px">${r.comment}</div>`:''}</div>`;}
+  }catch(e){}
+};
+
 function renderFr(){
   const el=document.getElementById('fList');if(!el)return;
-  if(!fData.length){el.innerHTML='<div style="text-align:center;color:var(--txt3);font-size:.78rem;padding:10px 0">لا يوجد أصدقاء بعد</div>';return;}
-  el.innerHTML=fData.map((f,i)=>`<div class="fitem"><div style="width:30px;height:30px;border-radius:50%;background:var(--brd2);display:flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0">👤</div><div style="flex:1;min-width:0"><div style="font-size:.82rem;font-weight:700;color:var(--txt)">${f.displayName}</div><div style="font-size:.68rem;color:var(--acc);direction:ltr;unicode-bidi:embed;font-family:monospace">@${f.username}</div><div style="font-size:.68rem;color:var(--txt3)">${f.pct!=null?f.pct+'٪ ختمة':'🔒 خاص'}</div></div><button class="fdl" onclick="remFr(${i})">✕</button></div>`).join('');
+  const T=LANGS[curLang]||LANGS.ar;
+  if(!fData.length){el.innerHTML=`<div style="text-align:center;color:var(--txt3);font-size:.78rem;padding:10px 0">${T.noFriends||'لا يوجد أصدقاء بعد'}</div>`;return;}
+  el.innerHTML=fData.map((f,i)=>`<div class="frnd-item">
+    <div style="width:34px;height:34px;border-radius:50%;background:var(--acc3);display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;cursor:pointer" onclick="viewFriendProfile('${f.uid}')">👤</div>
+    <div style="flex:1;min-width:0;cursor:pointer" onclick="viewFriendProfile('${f.uid}')">
+      <div style="font-size:.82rem;font-weight:700;color:var(--txt)">${f.displayName}</div>
+      <div style="font-size:.68rem;color:var(--acc);font-family:monospace">@${f.username||'—'}</div>
+      <div style="font-size:.68rem;color:var(--txt3)">${f.pct!=null?f.pct+'٪ ختمة':'—'}</div>
+    </div>
+    <button style="background:none;border:none;color:var(--acc2);cursor:pointer;font-size:.8rem;padding:4px 6px" onclick="openChatWith('${f.uid}','${f.displayName}')">💬</button>
+    <button class="fdl" onclick="remFr(${i})">✕</button>
+  </div>`).join('');
 }
-window.remFr=async i=>{fData.splice(i,1);if(fbOK&&window._u)await fbDB.collection('users').doc(window._u.uid).set({friends:fData},{merge:true});renderFr();showT('🗑️ تم الحذف');};
+window.remFr=async i=>{
+  fData.splice(i,1);
+  if(fbOK&&window._u)await fbDB.collection('users').doc(window._u.uid).set({friends:fData},{merge:true});
+  renderFr();showT('🗑️ تم الحذف');
+};
 
 /* SYNC */
 async function syncUp(uid){
@@ -1543,6 +1906,7 @@ const LANGS={
     khatmaStarted:'بدأت الختمة!',khatmaDone:'الحمد لله! أتممت الختمة',dayDone:'أحسنت! اليوم',
     confirmReset:'هل تريد إعادة الختمة؟',resetDone:'تمت الإعادة',
     rateNow:'⭐ قيّم الآن',rateTitle:'قيّم التطبيق',send:'إرسال',noRatings:'لا يوجد تقييمات بعد',
+    reply:'رد',replyingTo:'الرد على',writeReply:'اكتب ردك...',
     tafsirLoad:'⏳ جاري جلب التفسير...',prev:'▶ السابقة',next:'التالية ◀',
     lightMode:'المظهر الفاتح',darkLight:'داكن / فاتح',fontSize:'حجم خط القرآن',
     hideTafsir:'إخفاء التفسير',hideEn:'إخفاء التفسير الإنجليزي',showArOnly:'يظهر التفسير العربي فقط',
@@ -1565,6 +1929,7 @@ const LANGS={
     khatmaStarted:'Khatma started!',khatmaDone:'Alhamdulillah! Khatma complete',dayDone:'Well done! Day',
     confirmReset:'Restart the Khatma?',resetDone:'Khatma restarted',
     rateNow:'⭐ Rate Now',rateTitle:'Rate the App',send:'Submit',noRatings:'No ratings yet',
+    reply:'Reply',replyingTo:'Replying to',writeReply:'Write your reply...',
     tafsirLoad:'⏳ Loading tafsir...',prev:'▶ Prev',next:'Next ◀',
     lightMode:'Light Mode',darkLight:'Dark / Light',fontSize:'Quran Font Size',
     hideTafsir:'Hide Tafsir',hideEn:'Hide English Tafsir',showArOnly:'Show Arabic only',
