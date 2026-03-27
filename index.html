@@ -1062,7 +1062,13 @@ window.updCharCount=()=>{
   const el=document.getElementById('charCount');
   if(el)el.textContent=v.length;
   if(el)el.style.color=v.length>180?'var(--red)':'var(--txt3)';
-};selStar=myRat?.stars||0;document.getElementById('rTxt').value=myRat?.comment||'';updStars(selStar);document.getElementById('rOvl').classList.add('op');};
+};
+window.openRate=()=>{
+  selStar=myRat?.stars||0;
+  document.getElementById('rTxt').value=myRat?.comment||'';
+  updStars(selStar);
+  document.getElementById('rOvl').classList.add('op');
+};
 window.closeRate=()=>document.getElementById('rOvl').classList.remove('op');
 window.pickStar=v=>{selStar=v;updStars(v);};
 function updStars(v){document.querySelectorAll('.mstar').forEach((s,i)=>s.classList.toggle('lit',i<v));}
@@ -1083,7 +1089,7 @@ window.doLogin=async()=>{
   try{await fbAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider());}
   catch(e){showT('⚠️ فشل تسجيل الدخول');}
 };
-window.doLogout=async()=>{if(fbOK)await fbAuth.signOut();showT('تم تسجيل الخروج');};);};
+window.doLogout=async()=>{if(fbOK)await fbAuth.signOut();showT('تم تسجيل الخروج');};
 
 /* ✅ دالة موحّدة لتحديث الصورة في كل مكان */
 function setAvatar(src){
