@@ -349,6 +349,10 @@ footer{text-align:center;padding:26px 16px 10px;border-top:1px solid var(--brd);
     <div class="srow"><div class="slbl">إخفاء التفسير</div><label class="tsw"><input type="checkbox" id="htT"><div class="ttr"></div></label></div>
     <div class="srow"><div class="slbl">إخفاء التفسير الإنجليزي<small>يظهر التفسير العربي فقط</small></div><label class="tsw"><input type="checkbox" id="heT"><div class="ttr"></div></label></div>
     <div class="srow"><div class="slbl">تشغيل الآية التالية تلقائياً</div><label class="tsw"><input type="checkbox" id="apT"><div class="ttr"></div></label></div>
+    <div class="srow" style="flex-direction:column;align-items:flex-start;gap:8px">
+      <div class="slbl">🌐 ترجمة الموقع<small>يترجم كل شيء ما عدا القرآن والتفسير</small></div>
+      <div id="google_translate_element" style="direction:ltr"></div>
+    </div>
   </div>
 </div>
 </div>
@@ -854,16 +858,21 @@ async function buildSrIndex(){
   }catch(e){return false;}
 }
 
-// بحث ذكي: يتطابق مع الكلمة كاملة أو بداية الكلمة
+// بحث ذكي: يجد الكلمة في أي مكان، يرتب حسب الأهمية
 function smartMatch(clean, cleanQ){
-  if(!clean||!cleanQ)return false;
-  // ابحث عن الكلمة في النص مع التحقق من الحدود
-  const words=clean.split(' ');
-  for(const w of words){
-    if(w===cleanQ)return true; // تطابق تام
-    if(cleanQ.length>=3&&w.startsWith(cleanQ))return true; // بداية كلمة (للكلمات الطويلة فقط)
-  }
-  return false;
+  // تطابق جزئي — يجد cleanQ في أي موضع من النص
+  return clean.includes(cleanQ);
+}
+
+// ترتيب النتائج: الكلمة المستقلة أولاً ثم الجزئية
+function rankResults(results, cleanQ){
+  return results.sort((a,b)=>{
+    const aw=a.clean.split(' ').some(w=>w===cleanQ);
+    const bw=b.clean.split(' ').some(w=>w===cleanQ);
+    if(aw&&!bw)return -1;
+    if(bw&&!aw)return 1;
+    return a.gNum-b.gNum;
+  });
 }
 
 // تحديد الكلمة في النص الأصلي المشكّل بدقة
@@ -904,7 +913,8 @@ async function doSr(q){
     if(!ok){rd.innerHTML=`<div class="se">⚠️ تعذّر البحث — تحقق من الاتصال</div>`;return;}
   }
   // بحث ذكي بحدود الكلمة
-  const results=srIndex.filter(a=>smartMatch(a.clean,cleanQ));
+  const raw=srIndex.filter(a=>smartMatch(a.clean,cleanQ));
+  const results=rankResults(raw,cleanQ);
   if(!results.length){rd.innerHTML=`<div class="se">لم يُعثر على نتائج لـ «${q}»</div>`;return;}
   cd.textContent=`${results.length} نتيجة`;
   rd.innerHTML='';
@@ -1252,6 +1262,24 @@ setTimeout(()=>{
   };
   document.head.appendChild(s1);
 },800);
+
+// Google Translate — يترجم كل شيء ما عدا القرآن
+window.googleTranslateElementInit=function(){
+  new google.translate.TranslateElement({
+    pageLanguage:'ar',
+    includedLanguages:'en,fr,ur,tr,id,ms,de,es',
+    layout:google.translate.TranslateElement.InlineLayout.SIMPLE,
+    autoDisplay:false
+  },'google_translate_element');
+};
+setTimeout(()=>{
+  // منع ترجمة نصوص القرآن والتفسير
+  document.querySelectorAll('.ayah,.basl,.tf-ar,.tf-en,.rt,.bt').forEach(el=>{
+    el.setAttribute('translate','no');
+    el.classList.add('notranslate');
+  });
+},1500);
 </script>
+<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
 </body>
 </html>
