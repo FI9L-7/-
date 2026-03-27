@@ -378,8 +378,12 @@ footer{text-align:center;padding:26px 16px 10px;border-top:1px solid var(--brd);
       <span class="mstar" onclick="pickStar(4)">⭐</span>
       <span class="mstar" onclick="pickStar(5)">⭐</span>
     </div>
-    <div class="mfield"><label>تعليق (اختياري)</label><textarea id="rTxt" rows="3" placeholder="شاركنا رأيك..."></textarea></div>
-    <button class="btng" style="width:100%" onclick="submitRat()">إرسال</button>
+    <div class="mfield">
+      <label data-lk="commentLabel">تعليق (اختياري)</label>
+      <textarea id="rTxt" rows="3" placeholder="شاركنا رأيك..." maxlength="200" oninput="updCharCount()"></textarea>
+      <div style="text-align:left;font-size:.7rem;color:var(--txt3);margin-top:3px"><span id="charCount">0</span>/200</div>
+    </div>
+    <button class="btng" style="width:100%" onclick="submitRat()" data-lk="send">إرسال</button>
   </div>
 </div>
 </div>
@@ -1017,7 +1021,7 @@ function renderRatLocal(){
   if(ae)ae.textContent=myRat?myRat.stars.toFixed(1):'—';
   if(ce)ce.textContent=myRat?'تقييمك: '+'⭐'.repeat(myRat.stars):'لا يوجد تقييمات بعد';
   rSB(myRat?.stars||0);rBars([]);
-  if(myRat){const rv=document.getElementById('ratRevs');if(rv)rv.innerHTML=`<div class="rrev"><div class="rrev-h"><div class="rrev-av">👤</div><div class="rrev-nm">أنت</div><span>${'⭐'.repeat(myRat.stars)}</span></div>${myRat.comment?`<div class="rrev-tx">${myRat.comment}</div>`:''}</div>`;}
+  if(myRat){const rv=document.getElementById('ratRevs');if(rv)rv.innerHTML=mkRev(myRat,true);}
 }
 async function loadRat(){
   renderRatLocal();
@@ -1029,18 +1033,42 @@ function renderRat(all){
   document.getElementById('ratAvg').textContent=avg.toFixed(1);
   document.getElementById('ratCnt').textContent=toAr(total)+' تقييم';
   rSB(avg);rBars(all);
-  const sorted=[...all].sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,15);
-  document.getElementById('ratRevs').innerHTML=sorted.map(r=>`<div class="rrev"><div class="rrev-h"><div class="rrev-av">👤</div><div class="rrev-nm">${r.displayName||'مستخدم'}</div><span>${'⭐'.repeat(r.stars)}</span></div>${r.comment?`<div class="rrev-tx">${r.comment}</div>`:''}</div>`).join('');
+  const sorted=[...all].sort((a,b)=>(b.ts||0)-(a.ts||0));
+  document.getElementById('ratRevs').innerHTML=sorted.map(r=>mkRev(r,r.uid===window._u?.uid)).join('');
 }
 function rSB(avg){const el=document.getElementById('ratSB');if(!el)return;el.innerHTML=[1,2,3,4,5].map(i=>`<span style="font-size:1.2rem;opacity:${i<=Math.round(avg)?1:.25}">⭐</span>`).join('');}
 function rBars(all){const el=document.getElementById('ratBars');if(!el)return;const c={5:0,4:0,3:0,2:0,1:0};all.forEach(r=>{if(c[r.stars]!==undefined)c[r.stars]++;});const mx=Math.max(...Object.values(c),1);el.innerHTML=[5,4,3,2,1].map(n=>`<div class="rbar-row"><span>${n}⭐</span><div class="rbar-bg"><div class="rbar-fill" style="width:${Math.round(c[n]/mx*100)}%"></div></div><span style="width:20px;text-align:left;color:var(--txt2);font-weight:700">${toAr(c[n])}</span></div>`).join('');}
-window.openRate=()=>{selStar=myRat?.stars||0;document.getElementById('rTxt').value=myRat?.comment||'';updStars(selStar);document.getElementById('rOvl').classList.add('op');};
+// دالة بناء بطاقة التقييم مع "اظهار المزيد"
+function mkRev(r,isMe=false){
+  const name=isMe?'أنت':(r.displayName||'مستخدم');
+  const c=r.comment||'';
+  const MAX=120;
+  const short=c.length>MAX;
+  const shown=short?c.slice(0,MAX)+'...':c;
+  const more=short?`<span style="color:var(--acc);cursor:pointer;font-size:.75rem" onclick="this.parentElement.innerHTML='${c.replace(/'/g,"&#39;").replace(/\n/g,'<br>')}'"> اظهار المزيد</span>`:'';
+  return `<div class="rrev">
+    <div class="rrev-h">
+      <div class="rrev-av">👤</div>
+      <div class="rrev-nm">${name}</div>
+      <span>${'⭐'.repeat(r.stars)}</span>
+      ${r.ts?`<span style="font-size:.65rem;color:var(--txt3)">${new Date(r.ts).toLocaleDateString('ar')}</span>`:''}
+    </div>
+    ${c?`<div class="rrev-tx">${shown}${more}</div>`:''}
+  </div>`;
+}
+
+window.updCharCount=()=>{
+  const v=document.getElementById('rTxt')?.value||'';
+  const el=document.getElementById('charCount');
+  if(el)el.textContent=v.length;
+  if(el)el.style.color=v.length>180?'var(--red)':'var(--txt3)';
+};selStar=myRat?.stars||0;document.getElementById('rTxt').value=myRat?.comment||'';updStars(selStar);document.getElementById('rOvl').classList.add('op');};
 window.closeRate=()=>document.getElementById('rOvl').classList.remove('op');
 window.pickStar=v=>{selStar=v;updStars(v);};
 function updStars(v){document.querySelectorAll('.mstar').forEach((s,i)=>s.classList.toggle('lit',i<v));}
 window.submitRat=async()=>{
   if(!selStar){showT('⚠️ اختر النجوم');return;}
-  const comment=document.getElementById('rTxt').value.trim().substring(0,300);
+  const comment=document.getElementById('rTxt').value.trim().substring(0,200);
   const uid=window._u?.uid||('anon_'+Math.random().toString(36).slice(2));
   const displayName=CF.displayName||window._u?.displayName||'مستخدم';
   const rat={stars:selStar,comment,displayName,ts:Date.now(),uid};
@@ -1055,7 +1083,7 @@ window.doLogin=async()=>{
   try{await fbAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider());}
   catch(e){showT('⚠️ فشل تسجيل الدخول');}
 };
-window.doLogout=async()=>{if(fbOK)await fbAuth.signOut();showT('تم تسجيل الخروج');};
+window.doLogout=async()=>{if(fbOK)await fbAuth.signOut();showT('تم تسجيل الخروج');};);};
 
 /* ✅ دالة موحّدة لتحديث الصورة في كل مكان */
 function setAvatar(src){
@@ -1305,7 +1333,10 @@ const LANGS={
   ar:{
     mushaf:'📖 المصحف',search:'🔍 البحث',bkm:'🔖 المحفوظات',khatma:'🌙 الختمة',ratings:'⭐ تقييمات',
     login:'دخول',profile:'👤 ملفي',settings:'⚙️ الإعدادات',save:'حفظ',logout:'خروج',close:'إغلاق',
-    noUser:'غير مسجّل',tapLogin:'اضغط للدخول',
+    noUser:'غير مسجّل',tapLogin:'اضغط للدخول',loginBtn:'دخول بقوقل',
+    welcome:'مرحباً 👋',loginDesc:'سجّل دخولك لحفظ بياناتك',
+    friends:'👥 الأصدقاء',noFriends:'لا يوجد أصدقاء بعد',addFriendBtn:'إضافة +',
+    commentLabel:'تعليق (اختياري)',commentPH:'شاركنا رأيك...',showMore:'اظهار المزيد',
     surahGrid:'☰ السور',nextPage:'◀ التالية',prevPage:'السابقة ▶',goTo:'انتقل',
     page:'صفحة:',ayah:'آية:',nextSurah:'السورة التالية',
     searchPH:'اكتب كلمة أو آية...',noResults:'لم يُعثر على نتائج',searching:'جاري البحث...',
@@ -1320,7 +1351,10 @@ const LANGS={
   en:{
     mushaf:'📖 Quran',search:'🔍 Search',bkm:'🔖 Bookmarks',khatma:'🌙 Khatma',ratings:'⭐ Ratings',
     login:'Login',profile:'👤 Profile',settings:'⚙️ Settings',save:'Save',logout:'Logout',close:'Close',
-    noUser:'Not logged in',tapLogin:'Tap to login',
+    noUser:'Not logged in',tapLogin:'Tap to login',loginBtn:'Sign in with Google',
+    welcome:'Welcome 👋',loginDesc:'Sign in to save your data',
+    friends:'👥 Friends',noFriends:'No friends yet',addFriendBtn:'Add +',
+    commentLabel:'Comment (optional)',commentPH:'Share your thoughts...',showMore:'Show more',
     surahGrid:'☰ Surahs',nextPage:'◀ Next',prevPage:'Prev ▶',goTo:'Go',
     page:'Page:',ayah:'Ayah:',nextSurah:'Next Surah',
     searchPH:'Search word or verse...',noResults:'No results found',searching:'Searching...',
@@ -1424,6 +1458,11 @@ function setLang(l){
   const outBtn=document.querySelector('#pLogged .pfr .btnr');if(outBtn)outBtn.textContent=T.logout||'خروج';
   const clsBtn=document.querySelector('#pLogged .pfr .btno');if(clsBtn)clsBtn.textContent=T.close||'إغلاق';
   const pnb=document.querySelector('#pNL .btng');if(pnb)pnb.innerHTML='G&nbsp;'+(T.loginBtn||(l==='ar'?'دخول بقوقل':'Sign in with Google'));
+
+  // ── قسم الأصدقاء ──
+  const frTitle=document.querySelector('#pLogged [style*="الأصدقاء"], #pLogged div[style*="border-bottom"]');
+  if(frTitle)frTitle.textContent=T.friends||'👥 الأصدقاء';
+  const addBtn=document.querySelector('#pLogged .btno');if(addBtn)addBtn.textContent=T.addFriendBtn||'إضافة +';
 
   // ── مودال التقييم ──
   const ratTitle=document.querySelector('#rOvl .mtit');if(ratTitle)ratTitle.textContent=T.rateTitle||'⭐ قيّم التطبيق';
