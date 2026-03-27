@@ -350,8 +350,15 @@ footer{text-align:center;padding:26px 16px 10px;border-top:1px solid var(--brd);
     <div class="srow"><div class="slbl">إخفاء التفسير الإنجليزي<small>يظهر التفسير العربي فقط</small></div><label class="tsw"><input type="checkbox" id="heT"><div class="ttr"></div></label></div>
     <div class="srow"><div class="slbl">تشغيل الآية التالية تلقائياً</div><label class="tsw"><input type="checkbox" id="apT"><div class="ttr"></div></label></div>
     <div class="srow" style="flex-direction:column;align-items:flex-start;gap:8px">
-      <div class="slbl">🌐 ترجمة الموقع<small>يترجم كل شيء ما عدا القرآن والتفسير</small></div>
-      <div id="google_translate_element" style="direction:ltr"></div>
+      <div class="slbl">🌐 لغة الواجهة<small>تترجم الأزرار والنصوص فقط — ليس القرآن</small></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="sgb" data-lang="ar" onclick="setLang('ar')">عربي</button>
+        <button class="sgb" data-lang="en" onclick="setLang('en')">English</button>
+        <button class="sgb" data-lang="fr" onclick="setLang('fr')">Français</button>
+        <button class="sgb" data-lang="ur" onclick="setLang('ur')">اردو</button>
+        <button class="sgb" data-lang="tr" onclick="setLang('tr')">Türkçe</button>
+        <button class="sgb" data-lang="id" onclick="setLang('id')">Indonesia</button>
+      </div>
     </div>
   </div>
 </div>
@@ -858,49 +865,40 @@ async function buildSrIndex(){
   }catch(e){return false;}
 }
 
-// بحث ذكي: يجد الكلمة في أي مكان، يرتب حسب الأهمية
-function smartMatch(clean, cleanQ){
-  // تطابق جزئي — يجد cleanQ في أي موضع من النص
-  return clean.includes(cleanQ);
+// بحث ذكي متعدد الكلمات
+function smartSearch(clean, words){
+  // لو كلمة واحدة: ابحث جزئي
+  if(words.length===1) return clean.includes(words[0]);
+  // لو عدة كلمات: كل الكلمات لازم تكون موجودة
+  return words.every(w=>clean.includes(w));
 }
 
-// ترتيب النتائج: الكلمة المستقلة أولاً ثم الجزئية
-function rankResults(results, cleanQ){
-  return results.sort((a,b)=>{
-    const aw=a.clean.split(' ').some(w=>w===cleanQ);
-    const bw=b.clean.split(' ').some(w=>w===cleanQ);
-    if(aw&&!bw)return -1;
-    if(bw&&!aw)return 1;
-    return a.gNum-b.gNum;
-  });
-}
-
-// تحديد الكلمة في النص الأصلي المشكّل بدقة
-function hlWord(orig, cleanQ){
-  if(!cleanQ)return orig;
+// تحديد أول كلمة في النص الأصلي
+function hlWord(orig, words){
+  if(!words.length)return orig;
   const clean=stripDiac(orig).replace(/\s+/g,' ');
-  // ابنِ خريطة المواضع: clean[i] → orig[j]
   const map=[];
   let ci=0;
   for(let oi=0;oi<orig.length;oi++){
-    const ch=orig[oi];
-    const isDiac=/[\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4]/.test(ch);
-    if(!isDiac){map[ci]=oi;ci++;}
+    if(!/[\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4]/.test(orig[oi])){map[ci]=oi;ci++;}
   }
-  // ابحث عن cleanQ في النص النظيف مع التحقق من حدود الكلمة
-  let best=-1;
-  const cArr=clean.split('');
-  for(let i=0;i<=clean.length-cleanQ.length;i++){
-    if(clean.slice(i,i+cleanQ.length)!==cleanQ)continue;
-    const before=i===0||clean[i-1]===' ';
-    const after=(i+cleanQ.length)>=clean.length||clean[i+cleanQ.length]===' ';
-    if(before){best=i;if(after)break;} // تطابق تام في كلمة مستقلة = أفضل
+  let result=orig;
+  let offset=0;
+  for(const w of words){
+    const idx=clean.indexOf(w);
+    if(idx<0)continue;
+    const os=(map[idx]??0)+offset;
+    const oe=(map[idx+w.length]??orig.length)+offset;
+    result=result.slice(0,os)+'<mark>'+result.slice(os,oe)+'</mark>'+result.slice(oe);
+    offset+=15; // <mark></mark> = 15 حرف
+    break; // حدد الكلمة الأولى فقط
   }
-  if(best<0)return orig;
-  const os=map[best]??0;
-  const oe=map[best+cleanQ.length]??orig.length;
-  return orig.slice(0,os)+'<mark>'+orig.slice(os,oe)+'</mark>'+orig.slice(oe);
+  return result;
 }
+
+// pagination state
+let srResults=[],srPage=0;
+const SR_PER_PAGE=20;
 
 async function doSr(q){
   const rd=document.getElementById('sRes'),cd=document.getElementById('scnt');
@@ -912,19 +910,52 @@ async function doSr(q){
     const ok=await buildSrIndex();
     if(!ok){rd.innerHTML=`<div class="se">⚠️ تعذّر البحث — تحقق من الاتصال</div>`;return;}
   }
-  // بحث ذكي بحدود الكلمة
-  const raw=srIndex.filter(a=>smartMatch(a.clean,cleanQ));
-  const results=rankResults(raw,cleanQ);
-  if(!results.length){rd.innerHTML=`<div class="se">لم يُعثر على نتائج لـ «${q}»</div>`;return;}
-  cd.textContent=`${results.length} نتيجة`;
+  const words=cleanQ.split(' ').filter(Boolean);
+  srResults=srIndex.filter(a=>smartSearch(a.clean,words));
+  srPage=0;
+  renderSrPage();
+}
+
+function renderSrPage(){
+  const rd=document.getElementById('sRes'),cd=document.getElementById('scnt');
+  if(!srResults.length){rd.innerHTML=`<div class="se">لم يُعثر على نتائج</div>`;cd.textContent='';return;}
+  const words=document.getElementById('sinp').value.trim();
+  const cleanWords=stripDiac(words).replace(/\s+/g,' ').split(' ').filter(Boolean);
+  const total=srResults.length;
+  const pages=Math.ceil(total/SR_PER_PAGE);
+  const start=srPage*SR_PER_PAGE;
+  const slice=srResults.slice(start,start+SR_PER_PAGE);
+  cd.textContent=`${total} نتيجة — صفحة ${toAr(srPage+1)} من ${toAr(pages)}`;
   rd.innerHTML='';
-  results.slice(0,30).forEach((m,i)=>{
-    const d=document.createElement('div');d.className='rc';d.style.animationDelay=`${i*20}ms`;
-    const hl=hlWord(m.text,cleanQ);
+  slice.forEach((m,i)=>{
+    const d=document.createElement('div');d.className='rc';d.style.animationDelay=`${i*15}ms`;
+    const hl=hlWord(m.text,cleanWords);
     d.innerHTML=`<div class="rm">سورة ${m.sName} • الآية ${toAr(m.aNum)} • صفحة ${toAr(m.page)}</div><div class="rt">${hl}</div>`;
     d.onclick=()=>{sTab('m');hlGN=m.gNum;gPg(m.page);};
     rd.appendChild(d);
   });
+  // أزرار التنقل
+  if(pages>1){
+    const nav=document.createElement('div');
+    nav.style.cssText='display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap';
+    if(srPage>0){
+      const pb=document.createElement('button');
+      pb.className='jbtn';pb.textContent='▶ السابقة';
+      pb.onclick=()=>{srPage--;renderSrPage();rd.scrollIntoView({behavior:'smooth'});};
+      nav.appendChild(pb);
+    }
+    const info=document.createElement('span');
+    info.style.cssText='padding:8px 14px;font-size:.82rem;color:var(--txt3)';
+    info.textContent=`${srPage+1} / ${pages}`;
+    nav.appendChild(info);
+    if(srPage<pages-1){
+      const nb=document.createElement('button');
+      nb.className='jbtn';nb.textContent='◀ التالية';
+      nb.onclick=()=>{srPage++;renderSrPage();rd.scrollIntoView({behavior:'smooth'});};
+      nav.appendChild(nb);
+    }
+    rd.appendChild(nav);
+  }
 }
 
 /* ══ BOOKMARKS ══ */
@@ -1243,6 +1274,8 @@ try{
   renderKH();
   renderRatLocal();
   const savedAv=localStorage.getItem('qAv');if(savedAv)setAvatar(savedAv);
+  // طبّق اللغة المحفوظة
+  if(CF.lang&&CF.lang!=='ar')setTimeout(()=>setLang(CF.lang),100);
 }catch(e){console.error('Init error:',e);}
 
 // Firebase بعد ٨٠٠ms — لا يوقف الموقع أبداً
@@ -1263,23 +1296,128 @@ setTimeout(()=>{
   document.head.appendChild(s1);
 },800);
 
-// Google Translate — يترجم كل شيء ما عدا القرآن
-window.googleTranslateElementInit=function(){
-  new google.translate.TranslateElement({
-    pageLanguage:'ar',
-    includedLanguages:'en,fr,ur,tr,id,ms,de,es',
-    layout:google.translate.TranslateElement.InlineLayout.SIMPLE,
-    autoDisplay:false
-  },'google_translate_element');
+// نظام ترجمة الواجهة — لا يمس القرآن أبداً
+const LANGS={
+  ar:{
+    mushaf:'📖 المصحف',search:'🔍 البحث',bkm:'🔖 المحفوظات',khatma:'🌙 الختمة',ratings:'⭐ تقييمات',
+    login:'دخول',profile:'👤 ملفي',settings:'⚙️ الإعدادات',save:'حفظ',logout:'خروج',close:'إغلاق',
+    noUser:'غير مسجّل',tapLogin:'اضغط للدخول',
+    surahGrid:'☰ السور',nextPage:'◀ التالية',prevPage:'السابقة ▶',goTo:'انتقل',
+    page:'صفحة:',ayah:'آية:',nextSurah:'السورة التالية',
+    searchPH:'اكتب كلمة أو آية...',noResults:'لم يُعثر على نتائج',searching:'جاري البحث...',
+    noBkm:'لا توجد آيات محفوظة',del:'حذف',
+    khatmaTitle:'🌙 اختر خطة الختمة',todayRead:'📖 قراءة اليوم',startRead:'ابدأ القراءة',doneDay:'✓ أنهيت اليوم',restart:'إعادة الختمة',
+    rateNow:'⭐ قيّم الآن',rateTitle:'قيّم التطبيق',send:'إرسال',noRatings:'لا يوجد تقييمات بعد',
+    tafsirLoad:'⏳ جاري جلب التفسير...',prev:'▶ السابقة',next:'التالية ◀',
+    lightMode:'المظهر الفاتح',darkLight:'داكن / فاتح',fontSize:'حجم خط القرآن',
+    hideTafsir:'إخفاء التفسير',hideEn:'إخفاء التفسير الإنجليزي',showArOnly:'يظهر التفسير العربي فقط',
+    autoPlay:'تشغيل الآية التالية تلقائياً',langUI:'🌐 لغة الواجهة',langDesc:'تترجم الأزرار والنصوص فقط — ليس القرآن',
+  },
+  en:{
+    mushaf:'📖 Quran',search:'🔍 Search',bkm:'🔖 Bookmarks',khatma:'🌙 Khatma',ratings:'⭐ Ratings',
+    login:'Login',profile:'👤 Profile',settings:'⚙️ Settings',save:'Save',logout:'Logout',close:'Close',
+    noUser:'Not logged in',tapLogin:'Tap to login',
+    surahGrid:'☰ Surahs',nextPage:'◀ Next',prevPage:'Prev ▶',goTo:'Go',
+    page:'Page:',ayah:'Ayah:',nextSurah:'Next Surah',
+    searchPH:'Search word or verse...',noResults:'No results found',searching:'Searching...',
+    noBkm:'No bookmarks yet',del:'Delete',
+    khatmaTitle:'🌙 Choose Khatma Plan',todayRead:'📖 Today\'s Reading',startRead:'Start Reading',doneDay:'✓ Done Today',restart:'Restart',
+    rateNow:'⭐ Rate Now',rateTitle:'Rate the App',send:'Submit',noRatings:'No ratings yet',
+    tafsirLoad:'⏳ Loading tafsir...',prev:'▶ Prev',next:'Next ◀',
+    lightMode:'Light Mode',darkLight:'Dark / Light',fontSize:'Quran Font Size',
+    hideTafsir:'Hide Tafsir',hideEn:'Hide English Tafsir',showArOnly:'Show Arabic only',
+    autoPlay:'Auto-play next verse',langUI:'🌐 UI Language',langDesc:'Translates buttons and text only — not Quran',
+  },
+  fr:{
+    mushaf:'📖 Coran',search:'🔍 Recherche',bkm:'🔖 Favoris',khatma:'🌙 Khatma',ratings:'⭐ Avis',
+    login:'Connexion',profile:'👤 Profil',settings:'⚙️ Paramètres',save:'Sauvegarder',logout:'Déconnexion',close:'Fermer',
+    noUser:'Non connecté',tapLogin:'Appuyer pour se connecter',
+    surahGrid:'☰ Sourates',nextPage:'◀ Suiv.',prevPage:'Préc. ▶',goTo:'Aller',
+    page:'Page:',ayah:'Verset:',nextSurah:'Sourate suivante',
+    searchPH:'Rechercher un mot...',noResults:'Aucun résultat',searching:'Recherche...',
+    noBkm:'Pas de favoris',del:'Supprimer',
+    khatmaTitle:'🌙 Plan de lecture',todayRead:'📖 Lecture du jour',startRead:'Commencer',doneDay:'✓ Terminé',restart:'Recommencer',
+    rateNow:'⭐ Évaluer',rateTitle:"Évaluer l'app",send:'Envoyer',noRatings:'Pas encore d\'avis',
+    tafsirLoad:'⏳ Chargement...',prev:'▶ Préc.',next:'Suiv. ◀',
+    lightMode:'Mode clair',darkLight:'Sombre / Clair',fontSize:'Taille police',
+    hideTafsir:'Cacher le tafsir',hideEn:'Cacher tafsir anglais',showArOnly:'Arabe uniquement',
+    autoPlay:'Lecture auto suivante',langUI:'🌐 Langue',langDesc:'Traduit les boutons — pas le Coran',
+  },
+  ur:{
+    mushaf:'📖 قرآن',search:'🔍 تلاش',bkm:'🔖 بُک مارک',khatma:'🌙 ختم',ratings:'⭐ درجہ بندی',
+    login:'لاگ ان',profile:'👤 پروفائل',settings:'⚙️ ترتیبات',save:'محفوظ',logout:'لاگ آؤٹ',close:'بند',
+    noUser:'لاگ ان نہیں',tapLogin:'لاگ ان کریں',
+    surahGrid:'☰ سورتیں',nextPage:'◀ اگلا',prevPage:'پچھلا ▶',goTo:'جائیں',
+    page:'صفحہ:',ayah:'آیت:',nextSurah:'اگلی سورت',
+    searchPH:'لفظ تلاش کریں...',noResults:'کوئی نتیجہ نہیں',searching:'تلاش جاری...',
+    noBkm:'کوئی بُک مارک نہیں',del:'حذف',
+    khatmaTitle:'🌙 ختم کا منصوبہ',todayRead:'📖 آج کی تلاوت',startRead:'شروع کریں',doneDay:'✓ مکمل',restart:'دوبارہ شروع',
+    rateNow:'⭐ درجہ دیں',rateTitle:'ایپ کو درجہ دیں',send:'بھیجیں',noRatings:'ابھی کوئی درجہ نہیں',
+    tafsirLoad:'⏳ لوڈ ہو رہا ہے...',prev:'▶ پچھلا',next:'اگلا ◀',
+    lightMode:'روشن موڈ',darkLight:'اندھیرا / روشن',fontSize:'قرآن فونٹ',
+    hideTafsir:'تفسیر چھپائیں',hideEn:'انگریزی تفسیر چھپائیں',showArOnly:'صرف عربی',
+    autoPlay:'اگلی آیت خودکار',langUI:'🌐 زبان',langDesc:'صرف بٹن ترجمہ — قرآن نہیں',
+  },
+  tr:{
+    mushaf:'📖 Kuran',search:'🔍 Ara',bkm:'🔖 Yer İmleri',khatma:'🌙 Hatim',ratings:'⭐ Değerlendirme',
+    login:'Giriş',profile:'👤 Profil',settings:'⚙️ Ayarlar',save:'Kaydet',logout:'Çıkış',close:'Kapat',
+    noUser:'Giriş yapılmadı',tapLogin:'Giriş yapmak için tıkla',
+    surahGrid:'☰ Sureler',nextPage:'◀ Sonraki',prevPage:'Önceki ▶',goTo:'Git',
+    page:'Sayfa:',ayah:'Ayet:',nextSurah:'Sonraki Sure',
+    searchPH:'Kelime ara...',noResults:'Sonuç bulunamadı',searching:'Aranıyor...',
+    noBkm:'Yer imi yok',del:'Sil',
+    khatmaTitle:'🌙 Hatim Planı',todayRead:'📖 Bugünkü Okuma',startRead:'Okumaya Başla',doneDay:'✓ Bugün Tamamlandı',restart:'Yeniden Başla',
+    rateNow:'⭐ Değerlendir',rateTitle:'Uygulamayı Değerlendir',send:'Gönder',noRatings:'Henüz değerlendirme yok',
+    tafsirLoad:'⏳ Tefsir yükleniyor...',prev:'▶ Önceki',next:'Sonraki ◀',
+    lightMode:'Açık Tema',darkLight:'Koyu / Açık',fontSize:'Kuran Yazı Boyutu',
+    hideTafsir:'Tefsiri Gizle',hideEn:'İngilizce Tefsiri Gizle',showArOnly:'Sadece Arapça',
+    autoPlay:'Sonraki ayeti otomatik çal',langUI:'🌐 Arayüz Dili',langDesc:'Sadece düğmeleri çevirir — Kuran değil',
+  },
+  id:{
+    mushaf:'📖 Quran',search:'🔍 Cari',bkm:'🔖 Bookmark',khatma:'🌙 Khatam',ratings:'⭐ Ulasan',
+    login:'Masuk',profile:'👤 Profil',settings:'⚙️ Pengaturan',save:'Simpan',logout:'Keluar',close:'Tutup',
+    noUser:'Belum masuk',tapLogin:'Ketuk untuk masuk',
+    surahGrid:'☰ Surah',nextPage:'◀ Berikutnya',prevPage:'Sebelumnya ▶',goTo:'Pergi',
+    page:'Halaman:',ayah:'Ayat:',nextSurah:'Surah Berikutnya',
+    searchPH:'Cari kata atau ayat...',noResults:'Tidak ada hasil',searching:'Mencari...',
+    noBkm:'Belum ada bookmark',del:'Hapus',
+    khatmaTitle:'🌙 Pilih Rencana',todayRead:'📖 Bacaan Hari Ini',startRead:'Mulai Membaca',doneDay:'✓ Selesai Hari Ini',restart:'Mulai Ulang',
+    rateNow:'⭐ Beri Nilai',rateTitle:'Nilai Aplikasi',send:'Kirim',noRatings:'Belum ada ulasan',
+    tafsirLoad:'⏳ Memuat tafsir...',prev:'▶ Sebelumnya',next:'Berikutnya ◀',
+    lightMode:'Mode Terang',darkLight:'Gelap / Terang',fontSize:'Ukuran Font',
+    hideTafsir:'Sembunyikan Tafsir',hideEn:'Sembunyikan Tafsir Inggris',showArOnly:'Hanya Arab',
+    autoPlay:'Putar otomatis ayat berikutnya',langUI:'🌐 Bahasa Antarmuka',langDesc:'Menerjemahkan tombol saja — bukan Quran',
+  },
 };
-setTimeout(()=>{
-  // منع ترجمة نصوص القرآن والتفسير
-  document.querySelectorAll('.ayah,.basl,.tf-ar,.tf-en,.rt,.bt').forEach(el=>{
-    el.setAttribute('translate','no');
-    el.classList.add('notranslate');
+let curLang='ar';
+function setLang(l){
+  if(!LANGS[l])return;
+  curLang=l;sav('lang',l);
+  const T=LANGS[l];
+  const dir=l==='ur'?'rtl':'ltr';
+  // أزرار التبويب
+  const setT=(id,tx)=>{const e=document.getElementById(id);if(e)e.querySelector('span').textContent=tx;};
+  const setT2=(id,tx)=>{const e=document.getElementById(id);if(e)e.textContent=tx;};
+  setT('tm',T.mushaf);setT('ts',T.search);setT('tb',T.bkm);setT('tk',T.khatma);setT('tr',T.ratings);
+  setT2('bm',T.mushaf);setT2('bs',T.search);setT2('bb',T.bkm);setT2('bk',T.khatma);setT2('br',T.ratings);
+  // Auth bar
+  const ab=document.getElementById('aBt');if(ab)ab.textContent=window._u?T.profile:T.login;
+  const ns=document.getElementById('aNm');if(ns&&!window._u)ns.textContent=T.noUser;
+  const ss=document.getElementById('aSub');if(ss&&!window._u)ss.textContent=T.tapLogin;
+  // حقل البحث
+  const si=document.getElementById('sinp');if(si)si.placeholder=T.searchPH;
+  // إعدادات
+  document.querySelectorAll('[data-langkey]').forEach(el=>{
+    const k=el.dataset.langkey;if(T[k])el.textContent=T[k];
   });
-},1500);
+  // حفظ
+  const svBtn=document.querySelector('#profOvl .btng');
+  // أزرار قارئ الصفحات
+  document.getElementById('btnN1')?.setAttribute('data-lk','nextPage');
+  // حدّث lang buttons active state
+  document.querySelectorAll('[data-lang]').forEach(b=>b.classList.toggle('on',b.dataset.lang===l));
+}
+window.setLang=setLang;
 </script>
-<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
 </body>
 </html>
