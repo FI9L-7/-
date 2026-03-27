@@ -344,15 +344,15 @@ footer{text-align:center;padding:26px 16px 10px;border-top:1px solid var(--brd);
   <div class="mdrag"></div>
   <div class="mhead"><div class="mtit">⚙️ الإعدادات</div><button class="mcls" onclick="closeSets()">✕</button></div>
   <div class="mbody">
-    <div class="srow"><div class="slbl">المظهر الفاتح<small>داكن / فاتح</small></div><label class="tsw"><input type="checkbox" id="thT"><div class="ttr"></div></label></div>
-    <div class="srow"><div class="slbl">حجم خط القرآن</div><div class="sgc"><button class="sgb" id="fsm" onclick="setF('sm')">ص</button><button class="sgb on" id="fmd" onclick="setF('md')">م</button><button class="sgb" id="flg" onclick="setF('lg')">ك</button></div></div>
-    <div class="srow"><div class="slbl">إخفاء التفسير</div><label class="tsw"><input type="checkbox" id="htT"><div class="ttr"></div></label></div>
-    <div class="srow"><div class="slbl">إخفاء التفسير الإنجليزي<small>يظهر التفسير العربي فقط</small></div><label class="tsw"><input type="checkbox" id="heT"><div class="ttr"></div></label></div>
-    <div class="srow"><div class="slbl">تشغيل الآية التالية تلقائياً</div><label class="tsw"><input type="checkbox" id="apT"><div class="ttr"></div></label></div>
+    <div class="srow"><div class="slbl"><span data-lk="lightMode">المظهر الفاتح</span><small data-lk="darkLight">داكن / فاتح</small></div><label class="tsw"><input type="checkbox" id="thT"><div class="ttr"></div></label></div>
+    <div class="srow"><div class="slbl"><span data-lk="fontSize">حجم خط القرآن</span></div><div class="sgc"><button class="sgb" id="fsm" onclick="setF('sm')">ص</button><button class="sgb on" id="fmd" onclick="setF('md')">م</button><button class="sgb" id="flg" onclick="setF('lg')">ك</button></div></div>
+    <div class="srow"><div class="slbl"><span data-lk="hideTafsir">إخفاء التفسير</span></div><label class="tsw"><input type="checkbox" id="htT"><div class="ttr"></div></label></div>
+    <div class="srow"><div class="slbl"><span data-lk="hideEn">إخفاء التفسير الإنجليزي</span><small data-lk="showArOnly">يظهر التفسير العربي فقط</small></div><label class="tsw"><input type="checkbox" id="heT"><div class="ttr"></div></label></div>
+    <div class="srow"><div class="slbl"><span data-lk="autoPlay">تشغيل الآية التالية تلقائياً</span></div><label class="tsw"><input type="checkbox" id="apT"><div class="ttr"></div></label></div>
     <div class="srow" style="flex-direction:column;align-items:flex-start;gap:8px">
-      <div class="slbl">🌐 لغة الواجهة<small>تترجم الأزرار والنصوص فقط — ليس القرآن</small></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="sgb" data-lang="ar" onclick="setLang('ar')">عربي</button>
+      <div class="slbl"><span data-lk="langUI">🌐 لغة الواجهة</span><small data-lk="langDesc">تترجم الأزرار والنصوص فقط — ليس القرآن</small></div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
+        <button class="sgb on" data-lang="ar" onclick="setLang('ar')">عربي</button>
         <button class="sgb" data-lang="en" onclick="setLang('en')">English</button>
         <button class="sgb" data-lang="fr" onclick="setLang('fr')">Français</button>
         <button class="sgb" data-lang="ur" onclick="setLang('ur')">اردو</button>
@@ -476,7 +476,7 @@ footer{text-align:center;padding:26px 16px 10px;border-top:1px solid var(--brd);
   <div class="fln"></div>
   <div class="ftx">
     صُنع بـ ❤️ بواسطة <strong style="color:var(--acc)">فيصل</strong><br>
-    <a href="/cdn-cgi/l/email-protection#0b6d6a62786a676767673a383e3c324b6c666a626725686466"><span class="__cf_email__" data-cfemail="4c2a2d253f2d202020207d7f797b750c2b212d2520622f2321">[email&#160;protected]</span></a>
+    <span id="myEmail" style="cursor:pointer;color:var(--txt3)" onclick="this.textContent='faisallll13579@gmail.com';this.style.color='var(--acc)'">اضغط لإظهار الإيميل</span>
   </div>
 </footer>
 </div>
@@ -1398,34 +1398,57 @@ function setLang(l){
   if(!LANGS[l])return;
   curLang=l;sav('lang',l);
   const T=LANGS[l];
-  // أزرار التبويب
-  const setT=(id,tx)=>{const e=document.getElementById(id);if(e)e.querySelector('span').textContent=tx;};
-  const setT2=(id,tx)=>{const e=document.getElementById(id);if(e)e.textContent=tx;};
+
+  // ── أزرار التبويب ──
+  const setT=(id,tx)=>{const e=document.getElementById(id);if(e){const sp=e.querySelector('span');if(sp)sp.textContent=tx;else e.textContent=tx;}};
   setT('tm',T.mushaf);setT('ts',T.search);setT('tb',T.bkm);setT('tk',T.khatma);setT('tr',T.ratings);
-  setT2('bm',T.mushaf);setT2('bs',T.search);setT2('bb',T.bkm);setT2('bk',T.khatma);setT2('br',T.ratings);
-  // Auth bar
+  setT('bm',T.mushaf);setT('bs',T.search);setT('bb',T.bkm);setT('bk',T.khatma);setT('br',T.ratings);
+
+  // ── الشريط العلوي ──
   const ab=document.getElementById('aBt');if(ab)ab.textContent=window._u?T.profile:T.login;
   const ns=document.getElementById('aNm');if(ns&&!window._u)ns.textContent=T.noUser;
   const ss=document.getElementById('aSub');if(ss&&!window._u)ss.textContent=T.tapLogin;
-  // حقل البحث
+
+  // ── حقل البحث ──
   const si=document.getElementById('sinp');if(si)si.placeholder=T.searchPH;
-  // عناصر data-langkey
-  document.querySelectorAll('[data-langkey]').forEach(el=>{
-    const k=el.dataset.langkey;if(T[k])el.textContent=T[k];
+
+  // ── كل عنصر عليه data-lk ──
+  document.querySelectorAll('[data-lk]').forEach(el=>{
+    const k=el.dataset.lk;if(T[k])el.textContent=T[k];
   });
-  // حدّث lang buttons active state
+
+  // ── ملف شخصي ──
+  const proLabels={ar:['الاسم المعروض','اسم المستخدم','خصوصية الختمة'],en:['Display Name','Username','Khatma Privacy'],fr:['Nom affiché','Nom utilisateur','Confidentialité'],ur:['ڈسپلے نام','یوزر نیم','ختمہ کی رازداری'],tr:['Görünen Ad','Kullanıcı Adı','Hatim Gizliliği'],id:['Nama Tampil','Username','Privasi Khatam']};
+  document.querySelectorAll('#profOvl .mfield label').forEach((lbl,i)=>{if(proLabels[l]&&proLabels[l][i])lbl.textContent=proLabels[l][i];});
+  const savBtn=document.querySelector('#pLogged .pfr .btng');if(savBtn)savBtn.textContent=T.save||'حفظ';
+  const outBtn=document.querySelector('#pLogged .pfr .btnr');if(outBtn)outBtn.textContent=T.logout||'خروج';
+  const clsBtn=document.querySelector('#pLogged .pfr .btno');if(clsBtn)clsBtn.textContent=T.close||'إغلاق';
+  const pnb=document.querySelector('#pNL .btng');if(pnb)pnb.innerHTML='G&nbsp;'+(T.loginBtn||(l==='ar'?'دخول بقوقل':'Sign in with Google'));
+
+  // ── مودال التقييم ──
+  const ratTitle=document.querySelector('#rOvl .mtit');if(ratTitle)ratTitle.textContent=T.rateTitle||'⭐ قيّم التطبيق';
+  const ratSend=document.querySelector('#rOvl .mbody .btng');if(ratSend)ratSend.textContent=T.send||'إرسال';
+  const ratNow=document.querySelector('#tab-r .btng');if(ratNow)ratNow.textContent=T.rateNow||'⭐ قيّم الآن';
+
+  // ── اتجاه الصفحة ──
+  const isRtl=['ar','ur'].includes(l);
+  document.documentElement.dir=isRtl?'rtl':'ltr';
+  document.documentElement.lang=l;
+
+  // ── أزرار اللغة ──
   document.querySelectorAll('[data-lang]').forEach(b=>b.classList.toggle('on',b.dataset.lang===l));
-  // لو فيه تفسير مفتوح أعد تحميله باللغة الجديدة
+
+  // ── التفسير — أعد تحميله بالغة الجديدة ──
   if(curGN>0){
     const tf=document.getElementById('tfTxt');
-    if(tf&&tf.style.display!=='none'&&!CF.hideTafsir){
+    if(tf&&!CF.hideTafsir){
       const ed=l==='ar'?'ar.muyassar':'en.maududi';
-      tf.innerHTML='<div style="color:var(--txt3)">⏳ جاري جلب التفسير...</div>';
+      tf.innerHTML=`<div style="color:var(--txt3)">⏳...</div>`;
       fetch(`https://api.alquran.cloud/v1/ayah/${curGN}/${ed}`)
         .then(r=>r.json()).then(j=>{
           const txt=j.data?.text||'—';
           if(l==='ar') tf.innerHTML=`<div class="tf-ar" translate="no">${txt}</div>`;
-          else tf.innerHTML=`<div class="tf-en" style="direction:ltr;text-align:left;font-family:Georgia,serif;font-size:.85rem;line-height:1.8">${txt}</div>`;
+          else tf.innerHTML=`<div style="direction:ltr;text-align:left;font-family:Georgia,serif;font-size:.85rem;line-height:1.8;color:var(--txt2)">${txt}</div>`;
         }).catch(()=>{});
     }
   }
