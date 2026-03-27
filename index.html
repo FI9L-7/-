@@ -347,6 +347,7 @@ footer{text-align:center;padding:26px 16px 10px;border-top:1px solid var(--brd);
     <div class="srow"><div class="slbl">المظهر الفاتح<small>داكن / فاتح</small></div><label class="tsw"><input type="checkbox" id="thT"><div class="ttr"></div></label></div>
     <div class="srow"><div class="slbl">حجم خط القرآن</div><div class="sgc"><button class="sgb" id="fsm" onclick="setF('sm')">ص</button><button class="sgb on" id="fmd" onclick="setF('md')">م</button><button class="sgb" id="flg" onclick="setF('lg')">ك</button></div></div>
     <div class="srow"><div class="slbl">إخفاء التفسير</div><label class="tsw"><input type="checkbox" id="htT"><div class="ttr"></div></label></div>
+    <div class="srow"><div class="slbl">إخفاء التفسير الإنجليزي<small>يظهر التفسير العربي فقط</small></div><label class="tsw"><input type="checkbox" id="heT"><div class="ttr"></div></label></div>
     <div class="srow"><div class="slbl">تشغيل الآية التالية تلقائياً</div><label class="tsw"><input type="checkbox" id="apT"><div class="ttr"></div></label></div>
   </div>
 </div>
@@ -552,18 +553,16 @@ const SLIST=[
 ];
 
 const RC=[
-  {id:'ar.alafasy',       n:'مشاري العفاسي'},
-  {id:'ar.abdulbasit',    n:'عبدالباسط عبدالصمد'},
-  {id:'ar.husary',        n:'محمود الحصري'},
-  {id:'ar.minshawi',      n:'المنشاوي'},
-  {id:'ar.mahermuaiqly',  n:'ماهر المعيقلي'},
-  {id:'ar.ahmedajamy',    n:'أحمد العجمي'},
-  {id:'ar.muhammadayyoub',n:'محمد أيوب'},
-  {id:'ar.sudais',        n:'عبدالرحمن السديس'},
-  {id:'ar.shuraym',       n:'سعود الشريم'},
-  {id:'ar.hanirifai',     n:'هاني الرفاعي'},
-  {id:'ar.ibrahimakhbar', n:'إبراهيم الأخضر'},
-  {id:'ar.parhizgar',     n:'حسين العجمي'},
+  {id:'ar.alafasy',        n:'مشاري العفاسي'},
+  {id:'ar.husary',         n:'محمود الحصري'},
+  {id:'ar.minshawi',       n:'المنشاوي'},
+  {id:'ar.mahermuaiqly',   n:'ماهر المعيقلي'},
+  {id:'ar.ahmedajamy',     n:'أحمد العجمي'},
+  {id:'ar.muhammadayyoub', n:'محمد أيوب'},
+  {id:'ar.abdullahbasfar', n:'عبدالله بصفر'},
+  {id:'ar.abdulsamad',     n:'عبدالباسط (مرتل)'},
+  {id:'ar.shaatree',       n:'أبو بكر الشاطري'},
+  {id:'ar.saoodshuraym',   n:'سعود الشريم'},
 ];
 
 const PLANS=[
@@ -744,7 +743,8 @@ async function actAy(gn,sn,an,sName,txt){
     ]);
     const at=ar.ok?(await ar.json()).data?.text:'';
     const et=en.ok?(await en.json()).data?.text:'';
-    tf.innerHTML=`<div class="tf-ar">${at||'—'}</div>${et?`<div class="tf-en">${et}</div>`:''}`;
+    const showEn=!CF.hideEnglish;
+    tf.innerHTML=`<div class="tf-ar">${at||'—'}</div>${(et&&showEn)?`<div class="tf-en">${et}</div>`:''}`;
   }catch{tf.innerHTML='<div style="color:var(--txt3)">⚠️ تعذّر جلب التفسير</div>';}
 }
 
@@ -880,8 +880,22 @@ async function doSr(q){
   rd.innerHTML='';
   results.slice(0,30).forEach((m,i)=>{
     const d=document.createElement('div');d.className='rc';d.style.animationDelay=`${i*20}ms`;
-    // تمييز الكلمة في النص
-    const hl=m.text.replace(new RegExp(cleanQ.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'),'<mark>$&</mark>');
+    // تمييز الكلمة في النص الأصلي المشكّل
+    let hl=m.text;
+    try{
+      // ابحث عن موضع الكلمة في النص النظيف ثم حدد في الأصلي
+      const ci=[];
+      for(let i=0;i<m.text.length;i++){
+        const c=m.text[i];
+        if(!/[\u064B-\u065F\u0670]/.test(c))ci.push(i);
+      }
+      const idx=m.clean.indexOf(cleanQ);
+      if(idx>=0&&ci[idx]!==undefined){
+        const s=ci[idx];
+        const e=ci[idx+cleanQ.length]??m.text.length;
+        hl=m.text.slice(0,s)+'<mark>'+m.text.slice(s,e)+'</mark>'+m.text.slice(e);
+      }
+    }catch(e){}
     d.innerHTML=`<div class="rm">سورة ${m.sName} • الآية ${toAr(m.aNum)} • صفحة ${toAr(m.page)}</div><div class="rt">${hl}</div>`;
     d.onclick=()=>{sTab('m');hlGN=m.gNum;gPg(m.page);};
     rd.appendChild(d);
@@ -1084,10 +1098,22 @@ document.getElementById('avFile')?.addEventListener('change',e=>{
   const f=e.target.files[0];if(!f)return;e.target.value='';
   const r=new FileReader();
   r.onload=ev=>{
-    const url=ev.target.result;
-    try{localStorage.setItem('qAv',url);}catch(err){showT('⚠️ الصورة كبيرة جداً');return;}
-    setAvatar(url);
-    showT('✅ تم تحديث الصورة');
+    // رسم الصورة بجودة 600×600
+    const img=new Image();
+    img.onload=()=>{
+      const canvas=document.createElement('canvas');
+      canvas.width=600;canvas.height=600;
+      const ctx=canvas.getContext('2d');
+      // قص مربع من المنتصف
+      const size=Math.min(img.width,img.height);
+      const sx=(img.width-size)/2,sy=(img.height-size)/2;
+      ctx.drawImage(img,sx,sy,size,size,0,0,600,600);
+      const url=canvas.toDataURL('image/jpeg',0.9);
+      try{localStorage.setItem('qAv',url);}catch(err){showT('⚠️ الصورة كبيرة جداً');return;}
+      setAvatar(url);
+      showT('✅ تم تحديث الصورة');
+    };
+    img.src=ev.target.result;
   };
   r.readAsDataURL(f);
 });
@@ -1133,6 +1159,7 @@ function applyCF(){
   const fs=CF.fontSize||'md';document.body.classList.remove('fsm','flg');if(fs!=='md')document.body.classList.add('f'+fs);
   ['sm','md','lg'].forEach(s=>document.getElementById('f'+s)?.classList.toggle('on',s===fs));
   if(CF.hideTafsir)document.getElementById('htT').checked=true;
+  if(CF.hideEnglish)document.getElementById('heT').checked=true;
   if(CF.autoPlay)document.getElementById('apT').checked=true;
 }
 function sav(k,v){CF[k]=v;localStorage.setItem('qCF',JSON.stringify(CF));}
@@ -1156,6 +1183,7 @@ try{
   document.getElementById('btnP2')?.addEventListener('click',()=>gPg(curPg-1));
   document.getElementById('thT')?.addEventListener('change',togTh);
   document.getElementById('htT')?.addEventListener('change',function(){sav('hideTafsir',this.checked);});
+  document.getElementById('heT')?.addEventListener('change',function(){sav('hideEnglish',this.checked);});
   document.getElementById('apT')?.addEventListener('change',function(){sav('autoPlay',this.checked);});
   document.getElementById('jpI')?.addEventListener('keydown',e=>{if(e.key==='Enter')doJP();});
   document.getElementById('jaI')?.addEventListener('keydown',e=>{if(e.key==='Enter')doJA();});
