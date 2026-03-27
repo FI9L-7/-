@@ -1419,17 +1419,13 @@ window.openUserProfile=async(uid)=>{
   document.getElementById('upAddBtn').style.display='none';
 
   try{
-    const [userSnap,ratSnap]=await Promise.all([
-      fbDB.collection('users').doc(uid).get(),
-      fbDB.collection('ratings').doc(uid).get()
-    ]);
+    const userSnap=await fbDB.collection('users').doc(uid).get();
     const userData=userSnap.data()||{};
-    const ratData=ratSnap.data()||{};
     // اجمع البيانات من كل المصادر
-    const name=userData.displayName||ratData.displayName||'مستخدم';
-    const un=userData.username||ratData.username||'';
-    // الصورة: محاولة جلبها من كل المصادر
-    const photo=userData.photoURL||ratData.photoURL||'';
+    const name=userData.displayName||'مستخدم';
+    const un=userData.username||'';
+    // الصورة: من users أو من الـ custom avatar
+    const photo=userData.photoURL||'';
     document.getElementById('upNm').textContent=name;
     document.getElementById('upUN').textContent=un?('@'+un):'';
     if(photo){document.getElementById('upAv').innerHTML=`<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;}
@@ -1447,14 +1443,25 @@ window.openUserProfile=async(uid)=>{
         <div style="font-size:.68rem;color:var(--txt3)">${pct}٪ — صفحة ${kh.curPg||1} من ٦٠٤</div>`;
     }
 
-    // تقييم
-    if(ratData){
+    // تقييم - جلب من ratings collection
+    const ratRef=await fbDB.collection('ratings').doc(uid).get();
+    const ratDoc=ratRef.exists?ratRef.data():null;
+    // محاولة ثانية: البحث بالـ uid field
+    let finalRat=ratDoc;
+    if(!finalRat){
+      try{
+        const q=await fbDB.collection('ratings').where('uid','==',uid).limit(1).get();
+        if(!q.empty)finalRat=q.docs[0].data();
+      }catch(e){}
+    }
+
+    if(finalRat&&finalRat.stars){
       document.getElementById('upRevs').innerHTML=`
         <div style="font-size:.75rem;color:var(--txt3);margin-bottom:6px">تقييمه للتطبيق</div>
-        <div style="font-size:1.2rem;margin-bottom:4px">${'⭐'.repeat(ratData.stars)}</div>
-        ${ratData.comment?`<div style="font-size:.82rem;color:var(--txt2);line-height:1.7">${ratData.comment}</div>`:'<div style="color:var(--txt3);font-size:.78rem">لا يوجد تعليق</div>'}`;
+        <div style="font-size:1.4rem;margin-bottom:4px">${'⭐'.repeat(finalRat.stars)}</div>
+        ${finalRat.comment?`<div style="font-size:.82rem;color:var(--txt2);line-height:1.7">${finalRat.comment}</div>`:'<div style="color:var(--txt3);font-size:.78rem">لا يوجد تعليق</div>'}`;
     }else{
-      document.getElementById('upRevs').innerHTML='<div style="color:var(--txt3);font-size:.78rem">لم يضف تقييماً بعد</div>';
+      document.getElementById('upRevs').innerHTML='<div style="color:var(--txt3);font-size:.78rem;padding:8px 0">لم يضف تقييماً بعد</div>';
     }
 
     // أزرار
@@ -1751,20 +1758,27 @@ window.openChatWith=async(uid,name)=>{
   }catch(e){}
   if(chatUnsub)chatUnsub();
   chatUnsub=fbDB.collection('chats').doc(chatId).collection('msgs')
-    .orderBy('ts').limitToLast(50)
+    .limitToLast(50)
     .onSnapshot(snap=>{
       const ce=document.getElementById('chatMsgs');if(!ce)return;
       ce.innerHTML='';
-      if(snap.empty){ce.innerHTML='<div style="text-align:center;color:var(--txt3);font-size:.75rem;padding:20px">لا توجد رسائل بعد 👋</div>';return;}
-      snap.forEach(doc=>{
-        const d=doc.data(),isMe=d.from===window._u.uid;
+      if(snap.empty){ce.innerHTML='<div style="text-align:center;color:var(--txt3);font-size:.75rem;padding:20px">لا توجد رسائل بعد 👋<br><span style="font-size:.68rem">ابدأ المحادثة</span></div>';return;}
+      // رتّب محلياً حسب الوقت
+      const docs=[];snap.forEach(d=>docs.push(d.data()));
+      docs.sort((a,b)=>(a.ts||0)-(b.ts||0));
+      docs.forEach(d=>{
+        const isMe=d.from===window._u.uid;
         const div=document.createElement('div');
         div.style.cssText='display:flex;flex-direction:column';
-        const time=new Date(d.ts).toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'});
+        const time=new Date(d.ts||Date.now()).toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'});
         div.innerHTML=`<div class="${isMe?'msg-out':'msg-in'}">${d.text}</div><div class="msg-time" style="align-self:${isMe?'flex-end':'flex-start'}">${time}</div>`;
         ce.appendChild(div);
       });
       ce.scrollTop=ce.scrollHeight;
+    },(err)=>{
+      console.warn('chat error:',err);
+      const ce=document.getElementById('chatMsgs');
+      if(ce)ce.innerHTML='<div style="text-align:center;color:var(--red);font-size:.75rem;padding:20px">⚠️ تعذّر تحميل الرسائل</div>';
     });
   // افتح البروفايل على تبويب الرسائل
   if(!document.getElementById('profOvl')?.classList.contains('op')){
@@ -1812,7 +1826,6 @@ window.viewFriendProfile=async(uid)=>{
     const pct=(kh&&priv==='public')?Math.min(Math.round(((kh.curPg||1)-1)/604*100),100):null;
     document.getElementById('fProStats').innerHTML=`
       ${pct!=null?`<div style="text-align:center;background:var(--bg3);padding:10px 16px;border-radius:12px;border:1px solid var(--brd)"><div style="font-size:1.2rem;font-weight:900;color:var(--acc)">${pct}٪</div><div style="font-size:.68rem;color:var(--txt3)">ختمة</div></div>`:''}
-      ${(d.bookmarks||[]).length?`<div style="text-align:center;background:var(--bg3);padding:10px 16px;border-radius:12px;border:1px solid var(--brd)"><div style="font-size:1.2rem;font-weight:900;color:var(--acc)">${toAr((d.bookmarks||[]).length)}</div><div style="font-size:.68rem;color:var(--txt3)">محفوظ</div></div>`:''}`;
     if(!rs.empty){const r=rs.docs[0].data();document.getElementById('fProRat').innerHTML=`<div style="background:var(--bg3);border-radius:12px;padding:10px 14px;border:1px solid var(--brd)"><div style="font-size:.75rem;color:var(--txt3);margin-bottom:4px">تقييمه للتطبيق</div><div>${'⭐'.repeat(r.stars)}</div>${r.comment?`<div style="font-size:.78rem;color:var(--txt2);margin-top:5px">${r.comment}</div>`:''}</div>`;}
   }catch(e){}
 };
