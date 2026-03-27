@@ -623,6 +623,15 @@ function initFB(){
     fbAuth=firebase.auth();
     fbDB=firebase.firestore();
     fbOK=true;
+    // معالجة نتيجة الـ redirect بعد العودة من Google
+    fbAuth.getRedirectResult().then(result=>{
+      if(result?.user){
+        window._u=result.user;
+        updUI(result.user);
+        syncDown(result.user.uid);
+        showT('✅ تم تسجيل الدخول');
+      }
+    }).catch(e=>console.warn('redirect result:',e));
     fbAuth.onAuthStateChanged(u=>{window._u=u;updUI(u);if(u)syncDown(u.uid);});
   }catch(e){console.warn('FB:',e.message);}
 }
@@ -1256,8 +1265,19 @@ window.openUserProfile=async(uid)=>{
 /* ══ AUTH ══ */
 window.doLogin=async()=>{
   if(!fbOK){showT('⚠️ جاري الاتصال...');return;}
-  try{await fbAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider());}
-  catch(e){showT('⚠️ فشل تسجيل الدخول');}
+  try{
+    const provider=new firebase.auth.GoogleAuthProvider();
+    // الموبايل يستخدم redirect لأن Popup لا يعمل على بعض المتصفحات
+    const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if(isMobile){
+      await fbAuth.signInWithRedirect(provider);
+    }else{
+      await fbAuth.signInWithPopup(provider);
+    }
+  }catch(e){
+    console.warn(e);
+    showT('⚠️ افتح الموقع في متصفح Chrome أو Safari مباشرة');
+  }
 };
 window.doLogout=async()=>{if(fbOK)await fbAuth.signOut();showT('تم تسجيل الخروج');};
 
