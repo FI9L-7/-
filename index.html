@@ -836,23 +836,34 @@ async function doSr(q){
   rd.innerHTML=`<div class="pgload"><div class="sp"></div><span>جاري البحث...</span></div>`;
   cd.textContent='';
   const cleanQ=stripDiac(q);
-  try{
-    // quran-simple = نص بدون تشكيل → يقبل البحث بدون حركات
-    const res=await fetch(`https://api.alquran.cloud/v1/search/${encodeURIComponent(cleanQ)}/all/quran-simple`);
-    const json=await res.json();
-    const matches=json.data?.matches||[];
-    if(!matches.length){rd.innerHTML=`<div class="se">لم يُعثر على نتائج لـ «${q}»</div>`;return;}
-    cd.textContent=`${matches.length} نتيجة`;
-    rd.innerHTML='';
-    matches.slice(0,25).forEach((m,i)=>{
-      if(typeof m.text!=='string')return;
-      const d=document.createElement('div');d.className='rc';d.style.animationDelay=`${i*25}ms`;
-      const hlTxt=highlight(m.text,q);
-      d.innerHTML=`<div class="rm">سورة ${m.surah?.name||''} • الآية ${toAr(m.numberInSurah||0)} • صفحة ${toAr(m.page||0)}</div><div class="rt">${hlTxt}</div>`;
-      d.onclick=()=>{sTab('m');hlGN=m.number;gPg(m.page);};
-      rd.appendChild(d);
-    });
-  }catch{rd.innerHTML=`<div class="se">⚠️ تعذّر البحث — تحقق من الاتصال</div>`;}
+  if(!cleanQ){rd.innerHTML='';return;}
+  
+  // جرب عدة editions حتى يشتغل واحد
+  const editions=['ar','quran-simple','quran-uthmani'];
+  let matches=[];
+  for(const ed of editions){
+    try{
+      const res=await fetch(`https://api.alquran.cloud/v1/search/${encodeURIComponent(cleanQ)}/all/${ed}`);
+      if(!res.ok)continue;
+      const json=await res.json();
+      if(json.data?.matches?.length){
+        matches=json.data.matches;
+        break;
+      }
+    }catch(e){continue;}
+  }
+  
+  if(!matches.length){rd.innerHTML=`<div class="se">لم يُعثر على نتائج لـ «${q}»</div>`;return;}
+  cd.textContent=`${matches.length} نتيجة`;
+  rd.innerHTML='';
+  matches.slice(0,25).forEach((m,i)=>{
+    const txt=typeof m.text==='string'?m.text:'';
+    if(!txt)return;
+    const d=document.createElement('div');d.className='rc';d.style.animationDelay=`${i*25}ms`;
+    d.innerHTML=`<div class="rm">سورة ${m.surah?.name||''} • الآية ${toAr(m.numberInSurah||0)} • صفحة ${toAr(m.page||0)}</div><div class="rt">${txt}</div>`;
+    d.onclick=()=>{sTab('m');hlGN=m.number;gPg(m.page);};
+    rd.appendChild(d);
+  });
 }
 
 /* ══ BOOKMARKS ══ */
