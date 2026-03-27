@@ -837,8 +837,8 @@ async function doSr(q){
   cd.textContent='';
   const cleanQ=stripDiac(q);
   try{
-    // ar.simple = نص بدون تشكيل → يقبل البحث بدون حركات
-    const res=await fetch(`https://api.alquran.cloud/v1/search/${encodeURIComponent(cleanQ)}/all/ar.simple`);
+    // quran-simple = نص بدون تشكيل → يقبل البحث بدون حركات
+    const res=await fetch(`https://api.alquran.cloud/v1/search/${encodeURIComponent(cleanQ)}/all/quran-simple`);
     const json=await res.json();
     const matches=json.data?.matches||[];
     if(!matches.length){rd.innerHTML=`<div class="se">لم يُعثر على نتائج لـ «${q}»</div>`;return;}
