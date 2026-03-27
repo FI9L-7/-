@@ -977,49 +977,95 @@ function bmTog(gn,sn,an,sName,txt,page,sp){
 }
 function renderBM(){
   const d=document.getElementById('bCont');if(!d)return;
-  if(!BM.length){d.innerHTML=`<div class="be"><div class="bico">🔖</div><div>لا توجد آيات محفوظة</div><div style="font-size:.76rem;color:var(--txt3);margin-top:6px">كليك يمين أو ضغط طويل على أي آية</div></div>`;return;}
-  d.innerHTML=BM.map((b,i)=>`<div class="bitem" style="animation-delay:${i*35}ms"><div class="binf" onclick="sTab('m');hlGN=${b.gNum};gPg(${b.page||1})"><div class="bm2">سورة ${b.sName} • الآية ${toAr(b.aNum)} • صفحة ${toAr(b.page||'؟')}</div><div class="bt">${(b.text||'').substring(0,80)}${(b.text||'').length>80?'…':''}</div></div><button class="bdl" onclick="rmBM(${i})">حذف</button></div>`).join('');
+  const T=LANGS[curLang]||LANGS.ar;
+  if(!BM.length){
+    d.innerHTML=`<div class="be"><div class="bico">🔖</div><div>${T.noBkm||'لا توجد آيات محفوظة'}</div><div style="font-size:.76rem;color:var(--txt3);margin-top:6px">${T.bmHint||'كليك يمين أو ضغط طويل على أي آية'}</div></div>`;
+    return;
+  }
+  d.innerHTML=BM.map((b,i)=>`
+    <div class="bitem" style="animation-delay:${i*35}ms">
+      <div class="binf" onclick="sTab('m');hlGN=${b.gNum};gPg(${b.page||1})">
+        <div class="bm2">${T.surah||'سورة'} ${b.sName} · ${T.ayah||'الآية'} ${toAr(b.aNum)} · ${T.page||'صفحة'} ${toAr(b.page||'؟')}</div>
+        <div class="bt" translate="no">${(b.text||'').substring(0,80)}${(b.text||'').length>80?'…':''}</div>
+      </div>
+      <button class="bdl" onclick="rmBM(${i})">${T.del||'حذف'}</button>
+    </div>`).join('');
 }
-window.rmBM=i=>{BM.splice(i,1);localStorage.setItem('qBM',JSON.stringify(BM));if(window._u)syncUp(window._u.uid);renderBM();showT('🗑️ تم الحذف');};
+window.rmBM=i=>{
+  const T=LANGS[curLang]||LANGS.ar;
+  BM.splice(i,1);localStorage.setItem('qBM',JSON.stringify(BM));
+  if(window._u)syncUp(window._u.uid);renderBM();showT('🗑️ '+(T.deleted||'تم الحذف'));
+};
 
 /* ══ KHATMA ══ */
 function renderKH(){
   const d=document.getElementById('kCont');if(!d)return;
-  if(!KH?.active){d.innerHTML=`<div class="kcard"><div class="ktit">🌙 اختر خطة الختمة</div><div class="pgrid2">${PLANS.map((p,i)=>`<div class="pcard" style="animation-delay:${i*55}ms" onclick="startKH('${p.id}',${p.days},${p.pg})"><div class="pio">${p.ico}</div><div class="pnm2">${p.nm}</div><div class="pdt">${toAr(p.pg)} صفحة / يوم</div></div>`).join('')}</div></div>`;return;}
+  const T=LANGS[curLang]||LANGS.ar;
+  if(!KH?.active){
+    const pCards=PLANS.map((p,i)=>`
+      <div class="pcard" style="animation-delay:${i*55}ms" onclick="startKH('${p.id}',${p.days},${p.pg})">
+        <div class="pio">${p.ico}</div><div class="pnm2">${p.nm}</div>
+        <div class="pdt">${toAr(p.pg)} ${T.pagesDay||'صفحة / يوم'}</div>
+      </div>`).join('');
+    d.innerHTML=`<div class="kcard"><div class="ktit">🌙 ${T.khatmaTitle||'اختر خطة الختمة'}</div><div class="pgrid2">${pCards}</div></div>`;
+    return;
+  }
   const plan=PLANS.find(p=>p.id===KH.planId)||PLANS[1];
   const dn=Math.floor((Date.now()-new Date(KH.startDate))/86400000),cd=Math.min(dn,KH.days-1);
   const dp=KH.curPg||1,pct=Math.min(Math.round(((dp-1)/604)*100),100),isDone=dp>604;
   const te=Math.min(dp+KH.pgDay-1,604);
   const completedDays=Array.isArray(KH.dDone)?KH.dDone.length:0;
-  const totalDots=Math.min(KH.days,60);
-  const dots=Array.from({length:totalDots},(_,i)=>{
-    const n=i+1;
-    const done=Array.isArray(KH.dDone)&&KH.dDone.includes(n);
-    const today=!isDone&&n===completedDays+1;
-    return `<div class="dot ${done?'done':''} ${today?'today':''}" title="اليوم ${n}">${toAr(n)}</div>`;
+  const dots=Array.from({length:Math.min(KH.days,60)},(_,i)=>{
+    const n=i+1,done=Array.isArray(KH.dDone)&&KH.dDone.includes(n),today=!isDone&&n===completedDays+1;
+    return `<div class="dot ${done?'done':''} ${today?'today':''}" title="${T.day||'اليوم'} ${n}">${toAr(n)}</div>`;
   }).join('');
-  d.innerHTML=`<div class="kcard"><div class="ktit">${plan.ico} ${plan.nm} — اليوم ${toAr(cd+1)}</div><div class="pbw"><div class="pbf" style="width:${pct}%"></div></div><div class="pbl"><span>صفحة ${toAr(dp)} من ٦٠٤</span><span>${toAr(pct)}٪</span></div>${!isDone?`<div class="tdc"><div class="tdl">📖 قراءة اليوم</div><div class="tdr">من صفحة ${toAr(dp)} إلى صفحة ${toAr(te)}</div><div class="ka"><button class="kb kb-p" onclick="sTab('m');gPg(${dp})">ابدأ القراءة</button><button class="kb kb-g" onclick="mkDone()">✓ أنهيت اليوم</button></div></div>`:'<div style="text-align:center;font-size:1.4rem;padding:20px">🎉 الحمد لله!</div>'}<div class="ka" style="margin-top:14px">${KH.lastPage?`<button class="kb kb-p" onclick="sTab('m');gPg(${KH.lastPage})">متابعة من آخر موضع</button>`:''}<button class="kb kb-s" onclick="rstKH()">إعادة الختمة</button></div></div><div class="kcard"><div class="ktit">📅 سجل الأيام</div><div class="ddots">${dots}</div></div>`;
+  d.innerHTML=`
+    <div class="kcard">
+      <div class="ktit">${plan.ico} ${plan.nm} — ${T.day||'اليوم'} ${toAr(cd+1)}</div>
+      <div class="pbw"><div class="pbf" style="width:${pct}%"></div></div>
+      <div class="pbl"><span>${T.page||'صفحة'} ${toAr(dp)} ${T.of||'من'} ٦٠٤</span><span>${toAr(pct)}٪</span></div>
+      ${!isDone?`<div class="tdc">
+        <div class="tdl">📖 ${T.todayRead||'قراءة اليوم'}</div>
+        <div class="tdr">${T.fromPage||'من صفحة'} ${toAr(dp)} ${T.toPage||'إلى صفحة'} ${toAr(te)}</div>
+        <div class="ka">
+          <button class="kb kb-p" onclick="sTab('m');gPg(${dp})">${T.startRead||'ابدأ القراءة'}</button>
+          <button class="kb kb-g" onclick="mkDone()">✓ ${T.doneDay||'أنهيت اليوم'}</button>
+        </div></div>`
+      :`<div style="text-align:center;font-size:1.4rem;padding:20px">🎉 ${T.khatmaDone||'الحمد لله!'}</div>`}
+      <div class="ka" style="margin-top:14px">
+        ${KH.lastPage?`<button class="kb kb-p" onclick="sTab('m');gPg(${KH.lastPage})">${T.resumeRead||'متابعة من آخر موضع'}</button>`:''}
+        <button class="kb kb-s" onclick="rstKH()">${T.restart||'إعادة الختمة'}</button>
+      </div>
+    </div>
+    <div class="kcard"><div class="ktit">📅 ${T.daysLog||'سجل الأيام'}</div><div class="ddots">${dots}</div></div>`;
 }
-window.startKH=(id,days,pg)=>{KH={active:true,planId:id,days,pgDay:pg,startDate:new Date().toISOString(),curPg:1,dDone:[],lastPage:null};saveKH();renderKH();showT('🌙 بدأت الختمة!');};
+window.startKH=(id,days,pg)=>{
+  const T=LANGS[curLang]||LANGS.ar;
+  KH={active:true,planId:id,days,pgDay:pg,startDate:new Date().toISOString(),curPg:1,dDone:[],lastPage:null};
+  saveKH();renderKH();showT('🌙 '+(T.khatmaStarted||'بدأت الختمة!'));
+};
 window.mkDone=()=>{
+  const T=LANGS[curLang]||LANGS.ar;
   if(!KH)return;
   if(!Array.isArray(KH.dDone))KH.dDone=[];
   const nextDay=KH.dDone.length+1;
-  if(nextDay>KH.days){showT('🎉 أتممت الختمة!');return;}
-  KH.dDone.push(nextDay);
-  KH.curPg=Math.min((KH.curPg||1)+KH.pgDay,605);
-  saveKH();
-  renderKH();
-  showT('✅ أحسنت! اليوم '+toAr(nextDay)+' مكتمل ✓');
+  if(nextDay>KH.days){showT('🎉 '+(T.khatmaDone||'أتممت الختمة!'));return;}
+  KH.dDone.push(nextDay);KH.curPg=Math.min((KH.curPg||1)+KH.pgDay,605);
+  saveKH();renderKH();showT('✅ '+(T.dayDone||'أحسنت!')+' '+toAr(nextDay)+' ✓');
 };
-window.rstKH=()=>{if(!confirm('إعادة الختمة؟'))return;KH=null;localStorage.removeItem('qKH');renderKH();showT('تمت الإعادة');};
+window.rstKH=()=>{
+  const T=LANGS[curLang]||LANGS.ar;
+  if(!confirm(T.confirmReset||'إعادة الختمة؟'))return;
+  KH=null;localStorage.removeItem('qKH');renderKH();showT(T.resetDone||'تمت الإعادة');
+};
 function saveKH(){localStorage.setItem('qKH',JSON.stringify(KH));if(window._u)syncUp(window._u.uid);}
 
 /* ══ RATINGS ══ */
 function renderRatLocal(){
+  const T=LANGS[curLang]||LANGS.ar;
   const ae=document.getElementById('ratAvg'),ce=document.getElementById('ratCnt');
   if(ae)ae.textContent=myRat?myRat.stars.toFixed(1):'—';
-  if(ce)ce.textContent=myRat?'تقييمك: '+'⭐'.repeat(myRat.stars):'لا يوجد تقييمات بعد';
+  if(ce)ce.textContent=myRat?('⭐'.repeat(myRat.stars)+' '+toAr(myRat.stars)):(T.noRatings||'لا يوجد تقييمات بعد');
   rSB(myRat?.stars||0);rBars([]);
   if(myRat){const rv=document.getElementById('ratRevs');if(rv)rv.innerHTML=mkRev(myRat,true);}
 }
@@ -1029,34 +1075,35 @@ async function loadRat(){
   try{const snap=await fbDB.collection('ratings').get();const all=[];snap.forEach(d=>all.push(d.data()));if(all.length)renderRat(all);}catch(e){}
 }
 function renderRat(all){
+  const T=LANGS[curLang]||LANGS.ar;
   const total=all.length,sum=all.reduce((a,r)=>a+r.stars,0),avg=sum/total;
   document.getElementById('ratAvg').textContent=avg.toFixed(1);
-  document.getElementById('ratCnt').textContent=toAr(total)+' تقييم';
+  document.getElementById('ratCnt').textContent=toAr(total)+' '+(T.ratings||'تقييم');
   rSB(avg);rBars(all);
   const sorted=[...all].sort((a,b)=>(b.ts||0)-(a.ts||0));
   document.getElementById('ratRevs').innerHTML=sorted.map(r=>mkRev(r,r.uid===window._u?.uid)).join('');
 }
 function rSB(avg){const el=document.getElementById('ratSB');if(!el)return;el.innerHTML=[1,2,3,4,5].map(i=>`<span style="font-size:1.2rem;opacity:${i<=Math.round(avg)?1:.25}">⭐</span>`).join('');}
 function rBars(all){const el=document.getElementById('ratBars');if(!el)return;const c={5:0,4:0,3:0,2:0,1:0};all.forEach(r=>{if(c[r.stars]!==undefined)c[r.stars]++;});const mx=Math.max(...Object.values(c),1);el.innerHTML=[5,4,3,2,1].map(n=>`<div class="rbar-row"><span>${n}⭐</span><div class="rbar-bg"><div class="rbar-fill" style="width:${Math.round(c[n]/mx*100)}%"></div></div><span style="width:20px;text-align:left;color:var(--txt2);font-weight:700">${toAr(c[n])}</span></div>`).join('');}
-// دالة بناء بطاقة التقييم مع "اظهار المزيد"
 function mkRev(r,isMe=false){
-  const name=isMe?'أنت':(r.displayName||'مستخدم');
-  const c=r.comment||'';
-  const MAX=120;
-  const short=c.length>MAX;
-  const shown=short?c.slice(0,MAX)+'...':c;
-  const more=short?`<span style="color:var(--acc);cursor:pointer;font-size:.75rem" onclick="this.parentElement.innerHTML='${c.replace(/'/g,"&#39;").replace(/\n/g,'<br>')}'"> اظهار المزيد</span>`:'';
-  return `<div class="rrev">
+  const T=LANGS[curLang]||LANGS.ar;
+  const name=isMe?(T.you||'أنت'):(r.displayName||T.user||'مستخدم');
+  const c=(r.comment||'').trim();
+  const MAX=100;
+  const id='rv'+Math.random().toString(36).slice(2,7);
+  const date=r.ts?new Date(r.ts).toLocaleDateString(curLang==='ar'?'ar-SA':'en-US',{year:'numeric',month:'short',day:'numeric'}):'';
+  return `<div class="rrev" id="${id}">
     <div class="rrev-h">
-      <div class="rrev-av">👤</div>
-      <div class="rrev-nm">${name}</div>
+      <div class="rrev-av">${isMe?'🧑':'👤'}</div>
+      <div style="flex:1"><div class="rrev-nm">${name}</div>${date?`<div style="font-size:.62rem;color:var(--txt3)">${date}</div>`:''}</div>
       <span>${'⭐'.repeat(r.stars)}</span>
-      ${r.ts?`<span style="font-size:.65rem;color:var(--txt3)">${new Date(r.ts).toLocaleDateString('ar')}</span>`:''}
     </div>
-    ${c?`<div class="rrev-tx">${shown}${more}</div>`:''}
+    ${c?`<div class="rrev-tx" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--brd)">
+      <span id="${id}t">${c.length>MAX?c.slice(0,MAX)+'…':c}</span>
+      ${c.length>MAX?`<span style="color:var(--acc);cursor:pointer;font-size:.73rem;font-weight:700;display:inline-block;margin-top:4px" onclick="document.getElementById('${id}t').textContent=this.dataset.full;this.remove()" data-full="${c.replace(/"/g,'&quot;')}"> ${T.showMore||'اظهار المزيد'} ▾</span>`:''}
+    </div>`:''}
   </div>`;
 }
-
 window.updCharCount=()=>{
   const v=document.getElementById('rTxt')?.value||'';
   const el=document.getElementById('charCount');
@@ -1346,8 +1393,12 @@ const LANGS={
     surahGrid:'☰ السور',nextPage:'◀ التالية',prevPage:'السابقة ▶',goTo:'انتقل',
     page:'صفحة:',ayah:'آية:',nextSurah:'السورة التالية',
     searchPH:'اكتب كلمة أو آية...',noResults:'لم يُعثر على نتائج',searching:'جاري البحث...',
-    noBkm:'لا توجد آيات محفوظة',del:'حذف',
-    khatmaTitle:'🌙 اختر خطة الختمة',todayRead:'📖 قراءة اليوم',startRead:'ابدأ القراءة',doneDay:'✓ أنهيت اليوم',restart:'إعادة الختمة',
+    noBkm:'لا توجد آيات محفوظة',del:'حذف',deleted:'تم الحذف',bmHint:'كليك يمين أو ضغط طويل على أي آية',
+    surah:'سورة',ayah:'الآية',of:'من',day:'اليوم',pagesDay:'صفحة / يوم',you:'أنت',user:'مستخدم',
+    khatmaTitle:'اختر خطة الختمة',todayRead:'قراءة اليوم',startRead:'ابدأ القراءة',doneDay:'أنهيت اليوم',restart:'إعادة الختمة',
+    fromPage:'من صفحة',toPage:'إلى صفحة',resumeRead:'متابعة من آخر موضع',daysLog:'سجل الأيام',
+    khatmaStarted:'بدأت الختمة!',khatmaDone:'الحمد لله! أتممت الختمة',dayDone:'أحسنت! اليوم',
+    confirmReset:'هل تريد إعادة الختمة؟',resetDone:'تمت الإعادة',
     rateNow:'⭐ قيّم الآن',rateTitle:'قيّم التطبيق',send:'إرسال',noRatings:'لا يوجد تقييمات بعد',
     tafsirLoad:'⏳ جاري جلب التفسير...',prev:'▶ السابقة',next:'التالية ◀',
     lightMode:'المظهر الفاتح',darkLight:'داكن / فاتح',fontSize:'حجم خط القرآن',
@@ -1364,8 +1415,12 @@ const LANGS={
     surahGrid:'☰ Surahs',nextPage:'◀ Next',prevPage:'Prev ▶',goTo:'Go',
     page:'Page:',ayah:'Ayah:',nextSurah:'Next Surah',
     searchPH:'Search word or verse...',noResults:'No results found',searching:'Searching...',
-    noBkm:'No bookmarks yet',del:'Delete',
-    khatmaTitle:'🌙 Choose Khatma Plan',todayRead:'📖 Today\'s Reading',startRead:'Start Reading',doneDay:'✓ Done Today',restart:'Restart',
+    noBkm:'No bookmarks yet',del:'Delete',deleted:'Deleted',bmHint:'Right-click or long-press on any verse',
+    surah:'Surah',ayah:'Ayah',of:'of',day:'Day',pagesDay:'pages / day',you:'You',user:'User',
+    khatmaTitle:'Choose Khatma Plan',todayRead:"Today's Reading",startRead:'Start Reading',doneDay:'Done Today',restart:'Restart Khatma',
+    fromPage:'From page',toPage:'to page',resumeRead:'Continue from last position',daysLog:'Days Log',
+    khatmaStarted:'Khatma started!',khatmaDone:'Alhamdulillah! Khatma complete',dayDone:'Well done! Day',
+    confirmReset:'Restart the Khatma?',resetDone:'Khatma restarted',
     rateNow:'⭐ Rate Now',rateTitle:'Rate the App',send:'Submit',noRatings:'No ratings yet',
     tafsirLoad:'⏳ Loading tafsir...',prev:'▶ Prev',next:'Next ◀',
     lightMode:'Light Mode',darkLight:'Dark / Light',fontSize:'Quran Font Size',
@@ -1464,11 +1519,6 @@ function setLang(l){
   const outBtn=document.querySelector('#pLogged .pfr .btnr');if(outBtn)outBtn.textContent=T.logout||'خروج';
   const clsBtn=document.querySelector('#pLogged .pfr .btno');if(clsBtn)clsBtn.textContent=T.close||'إغلاق';
   const pnb=document.querySelector('#pNL .btng');if(pnb)pnb.innerHTML='G&nbsp;'+(T.loginBtn||(l==='ar'?'دخول بقوقل':'Sign in with Google'));
-
-  // ── قسم الأصدقاء ──
-  const frTitle=document.querySelector('#pLogged [style*="الأصدقاء"], #pLogged div[style*="border-bottom"]');
-  if(frTitle)frTitle.textContent=T.friends||'👥 الأصدقاء';
-  const addBtn=document.querySelector('#pLogged .btno');if(addBtn)addBtn.textContent=T.addFriendBtn||'إضافة +';
 
   // ── مودال التقييم ──
   const ratTitle=document.querySelector('#rOvl .mtit');if(ratTitle)ratTitle.textContent=T.rateTitle||'⭐ قيّم التطبيق';
